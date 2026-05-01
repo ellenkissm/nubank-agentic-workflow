@@ -1,0 +1,2474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Product Development Workflow — Nubank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BASE RESET & TOKENS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  --nu:#820AD1; --nu2:#9B30FF; --nu3:#A855F7; --nu4:#6B21A8;
+  --t1:#1A1A1A; --t2:#6B7280; --t3:#9CA3AF; --t4:#D1D5DB;
+  --bg:#FFFFFF; --bg2:#FAFAFA; --bg3:#F3F4F6;
+  --bdr:#E5E7EB; --bdr2:#F3F4F6;
+  --green:#059669; --blue:#4F46E5; --amber:#D97706; --red:#DC2626; --teal:#0891B2;
+  --r:16px; --rs:10px;
+  --ft:'DM Sans',system-ui,sans-serif;
+  --fm:'DM Mono',monospace;
+  --nav-h:50px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--ft);background:#F9F7FE;color:var(--t1);font-size:14px;line-height:1.5;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HERO
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.hero {
+  background: linear-gradient(150deg, #1A0040 0%, #3D0C8A 40%, #820AD1 100%);
+  padding: 28px 40px 26px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse 80% 80% at 90% -10%, rgba(168,85,247,.25), transparent),
+              radial-gradient(ellipse 50% 60% at 10% 110%, rgba(79,70,229,.2), transparent);
+  pointer-events:none;
+}
+.hero-grid {
+  max-width: 1120px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 32px; position: relative; z-index: 1;
+}
+.hero-left { flex: 1; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 100px; padding: 4px 12px;
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,.8);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;
+}
+.hero-eyebrow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #A855F7; animation: hpulse 2s infinite;
+}
+@keyframes hpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+.hero-title {
+  font-size: 26px; font-weight: 700; color: white;
+  line-height: 1.15; margin-bottom: 8px; letter-spacing: -.3px;
+}
+.hero-title em { color: #C084FC; font-style: normal; }
+.hero-sub { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.6; max-width: 560px; }
+.hero-stats {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  margin-top: 16px;
+}
+.hero-stat {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.hero-stat-num { font-size: 18px; font-weight: 700; color: white; }
+.hero-stat-lbl { font-size: 10px; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 1px; }
+.hero-badges {
+  display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+  padding-bottom: 4px;
+}
+.hero-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 10px; padding: 8px 14px;
+  font-size: 11px; font-weight: 600; color: rgba(255,255,255,.75);
+  white-space: nowrap;
+}
+.hero-badge-icon { font-size: 14px; opacity: .9; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOP NAV (sticky)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.top-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: white;
+  border-bottom: 1px solid var(--bdr2);
+  padding: 0 40px;
+  display: flex; align-items: stretch;
+  box-shadow: 0 1px 8px rgba(0,0,0,.04);
+}
+.nav-link {
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 20px;
+  height: var(--nav-h);
+  border: none; background: transparent;
+  font-family: var(--ft); cursor: pointer;
+  color: var(--t3); font-size: 12.5px; font-weight: 600;
+  transition: color .15s;
+}
+.nav-link::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+  background:transparent; transition:background .15s;
+  border-radius: 2px 2px 0 0;
+}
+.nav-link:hover { color: var(--t2); }
+.nav-link.active { color: var(--t1); }
+.nav-link.active::after { background: var(--nu); }
+.nav-link-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+  background: var(--bg3); transition: background .15s;
+}
+.nav-link.active .nav-link-icon {
+  background: rgba(130,10,209,.1);
+}
+.nav-link-text { display: flex; flex-direction: column; gap: 1px; }
+.nav-link-title { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+.nav-link-desc { font-size: 10px; font-weight: 400; color: var(--t3); line-height: 1; white-space: nowrap; }
+.nav-link.active .nav-link-title { color: var(--t1); }
+.nav-link.active .nav-link-desc { color: var(--nu); opacity: .7; }
+.nav-sep { width: 1px; background: var(--bdr2); margin: 14px 0; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION CONTAINERS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.section { display: none; }
+.section.active { display: block; animation: secIn .2s ease; }
+@keyframes secIn { from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);} }
+
+.page-wrap { max-width: 1120px; margin: 0 auto; padding: 24px 40px 60px; }
+.page-wrap-narrow { max-width: 960px; margin: 0 auto; padding: 24px 40px 60px; }
+.page-wrap-wide { max-width: 1200px; margin: 0 auto; padding: 24px 40px 60px; }
+
+/* ── Section header ── */
+.sec-header {
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 22px; padding-bottom: 18px;
+  border-bottom: 1px solid var(--bdr2);
+}
+.sec-header-icon {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(130,10,209,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+}
+.sec-header-body { flex: 1; }
+.sec-eyebrow {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2.5px; color: var(--nu); margin-bottom: 4px; opacity: .8;
+}
+.sec-title { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+.sec-title em { color: var(--nu); font-style: normal; }
+.sec-sub { font-size: 12px; color: var(--t2); line-height: 1.6; max-width: 640px; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SPEC CTA BUTTON (deep link from map → spec)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.spec-link-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg,var(--nu),var(--nu4));
+  color: white; font-family: var(--ft); font-size: 11.5px; font-weight: 700;
+  cursor: pointer; transition: opacity .2s;
+}
+.spec-link-btn:hover { opacity: .88; }
+.spec-cta {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--bdr2);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+.spec-cta-hint { font-size: 11px; color: var(--t3); }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ORBIT MAP STYLES (ported + refined)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.label-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:var(--nu);margin-bottom:10px;}
+.page-title{font-size:28px;font-weight:700;line-height:1.2;margin-bottom:8px;}
+.page-title em{color:var(--nu);font-style:normal;}
+.subtitle{color:var(--t2);font-size:14px;line-height:1.6;max-width:720px;margin-bottom:32px;}
+
+.view-toggle{display:flex;gap:4px;background:white;padding:5px;border-radius:var(--rs);border:1px solid var(--bdr2);width:fit-content;margin-bottom:24px;}
+.view-btn{padding:7px 18px;border-radius:7px;border:none;font-family:var(--ft);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .15s;background:transparent;}
+.view-btn:hover{background:var(--bg3);}
+.view-btn.active{background:var(--nu);color:white;}
+
+#view-orbit{display:none;}
+#view-orbit.active{display:block;}
+
+.orbit-container{
+  position:relative;width:100%;padding-bottom:46%;
+  background:white;border-radius:var(--r);border:1px solid var(--bdr2);
+  overflow:hidden;margin-bottom:0;
+}
+.orbit-inner{position:absolute;inset:0;}
+
+.spec-core{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:140px;height:140px;border-radius:50%;
+  background:linear-gradient(135deg,#820AD1,#4A0080);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 0 0 16px rgba(130,10,209,.06),0 0 0 32px rgba(130,10,209,.03);
+  z-index:10;cursor:pointer;
+}
+.spec-icon{font-size:28px;margin-bottom:4px;}
+.spec-label{font-size:11px;font-weight:700;color:white;text-align:center;line-height:1.3;}
+.spec-sub{font-size:9px;color:rgba(255,255,255,.6);text-align:center;margin-top:2px;}
+
+.orbit-node{
+  position:absolute;width:110px;height:110px;
+  border-radius:50%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;
+  border:2px solid transparent;
+}
+.orbit-node-inner{
+  width:100%;height:100%;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;
+}
+.orbit-node:hover .orbit-node-inner{transform:scale(1.08);box-shadow:0 4px 20px rgba(130,10,209,.12);}
+.orbit-node.active-node .orbit-node-inner{box-shadow:0 0 0 4px rgba(130,10,209,.15);}
+.orbit-node-icon{font-size:22px;margin-bottom:4px;}
+.orbit-node-label{font-size:10px;font-weight:700;text-align:center;line-height:1.3;padding:0 6px;}
+.orbit-node-steps{font-size:9px;opacity:.7;margin-top:2px;}
+.orbit-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+
+.detail-panel{
+  background:white;border:1px solid var(--bdr2);border-radius:var(--r);
+  padding:20px 22px;animation:fadeUp .25s ease;display:none;
+  height:100%;
+}
+.detail-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+.detail-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.detail-icon{font-size:26px;}
+.detail-title{font-size:16px;font-weight:700;}
+.detail-title em{color:var(--nu);font-style:normal;}
+.detail-subtitle{font-size:13px;color:var(--t2);margin-top:2px;}
+
+.io-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.io-box{border-radius:var(--rs);padding:12px 14px;}
+.io-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.io-item{display:flex;gap:8px;align-items:flex-start;font-size:12px;margin-bottom:6px;line-height:1.5;}
+.io-item::before{content:'›';font-weight:700;flex-shrink:0;margin-top:1px;}
+
+.connects-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.connects-label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}
+.ctag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;}
+.ctag:hover{opacity:.8;}
+.chapter-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;font-size:11px;font-weight:700;}
+.steps-badge{font-size:11px;font-weight:600;color:var(--t2);background:var(--bg3);padding:4px 10px;border-radius:6px;}
+.key-artifacts{margin-top:12px;}
+.key-artifacts-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-bottom:10px;}
+.artifact-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,rgba(130,10,209,.04),rgba(130,10,209,.08));
+  border:1px solid rgba(130,10,209,.12);border-radius:100px;
+  padding:5px 12px;font-size:11px;font-weight:600;color:var(--nu);
+  margin:0 4px 6px 0;
+}
+
+#view-flow{display:none;}
+#view-flow.active{display:block;}
+.flow-wrapper{display:flex;flex-direction:column;gap:0;}
+.flow-phase{margin-bottom:8px;}
+.flow-phase-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--t3);margin-bottom:10px;padding-left:4px;}
+.flow-row{display:flex;gap:10px;align-items:stretch;margin-bottom:2px;}
+.flow-card{
+  flex:1;background:white;border:1px solid var(--bdr2);border-radius:14px;
+  padding:14px 16px;cursor:pointer;transition:border-color .2s,box-shadow .2s;
+  position:relative;overflow:hidden;
+}
+.flow-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;}
+.flow-card:hover{border-color:rgba(130,10,209,.2);box-shadow:0 2px 12px rgba(130,10,209,.06);}
+.flow-card-icon{font-size:18px;margin-bottom:6px;}
+.flow-card-title{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px;}
+.flow-card-steps{font-size:10px;color:var(--t3);margin-bottom:6px;}
+.flow-card-out{font-size:11px;color:var(--t2);line-height:1.4;}
+.flow-card-out strong{color:var(--nu);font-weight:700;}
+.flow-arrow{display:flex;align-items:center;justify-content:center;padding:4px 0;}
+.flow-arrow-line{width:2px;height:20px;background:var(--bdr);margin:0 auto;position:relative;}
+.flow-arrow-line::after{content:'▼';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--t3);}
+.parallel-bar{background:rgba(130,10,209,.04);border:1px dashed rgba(130,10,209,.2);border-radius:12px;padding:12px;margin-bottom:8px;}
+.parallel-label{font-size:9px;font-weight:700;color:var(--nu);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+.spec-banner{
+  background:linear-gradient(135deg,#820AD1,#4A0080);
+  border-radius:var(--r);padding:20px 28px;
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:24px;color:white;
+}
+.spec-banner-icon{font-size:32px;flex-shrink:0;}
+.spec-banner-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.spec-banner-sub{font-size:12px;opacity:.75;line-height:1.5;}
+.spec-section-pills{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.spec-pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 12px;font-size:11px;font-weight:600;color:white;}
+.suggestion-box{background:rgba(79,70,229,.04);border:1px solid rgba(79,70,229,.12);border-radius:var(--rs);padding:16px 20px;margin-top:20px;}
+.suggestion-title{font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px;}
+.suggestion-text{font-size:12px;color:var(--t2);line-height:1.6;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   MODULE SPEC STYLES (ported)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.g-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:var(--nu);margin-bottom:8px;}
+.g-title{font-size:30px;font-weight:700;line-height:1.2;margin-bottom:8px;}
+.g-title em{color:var(--nu);font-style:normal;}
+.g-sub{color:var(--t2);font-size:14px;line-height:1.6;max-width:720px;margin-bottom:28px;}
+.mod-selector{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:28px;}
+.mod-btn{position:relative;overflow:hidden;padding:14px 8px 12px;border-radius:12px;border:1.5px solid var(--bdr2);font-family:var(--ft);cursor:pointer;background:white;color:var(--t2);transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;}
+.mod-btn::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:var(--bdr2);transition:background .2s;}
+.mod-btn:hover{background:var(--bg2);}
+.mod-btn:hover::before{background:var(--mod-color,var(--nu));}
+.mod-btn.active{border-color:transparent;color:white;}
+.mod-btn.active::before{background:rgba(255,255,255,.25);}
+.mod-btn-num{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;opacity:.65;line-height:1;}
+.mod-btn-icon{font-size:20px;line-height:1;}
+.mod-btn-label{font-size:11px;font-weight:700;line-height:1.25;}
+.nav-heading{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--t3);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.nav-heading::after{content:'';flex:1;height:1px;background:var(--bdr2);}
+.module{display:none;animation:fadeUp .3s ease;}
+.module.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.mod-header{margin-bottom:28px;}
+.mod-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:var(--nu);margin-bottom:8px;}
+.mod-title{font-size:26px;font-weight:700;line-height:1.2;margin-bottom:8px;}
+.mod-title em{color:var(--nu);font-style:normal;}
+.mod-sub{color:var(--t2);font-size:13px;line-height:1.6;}
+.meta-strip{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
+.meta-pill{background:white;border:1px solid var(--bdr);border-radius:100px;padding:5px 12px;font-size:11px;color:var(--t2);display:flex;align-items:center;gap:5px;}
+.meta-pill strong{color:var(--t1);font-weight:600;}
+.meta-dot{width:6px;height:6px;border-radius:50%;background:var(--nu);flex-shrink:0;}
+.tab-nav{display:flex;gap:4px;margin-bottom:20px;background:white;padding:5px;border-radius:var(--rs);border:1px solid var(--bdr2);}
+.tab-btn{flex:1;padding:9px 6px;border-radius:8px;border:none;background:transparent;font-family:var(--ft);font-size:11px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .2s;}
+.tab-btn:hover{background:var(--bg3);}
+.tab-btn.active{background:var(--nu);color:white;}
+.tab-panel{display:none;animation:fadeUp .25s ease;}
+.tab-panel.active{display:block;}
+.section-card{background:white;border:1px solid var(--bdr2);border-radius:var(--r);padding:24px 28px;margin-bottom:14px;}
+.section-title{font-family:var(--ft);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t2);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.row{display:grid;grid-template-columns:160px 1fr;gap:10px 16px;margin-bottom:10px;align-items:start;}
+.row-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);padding-top:3px;}
+.row-value{font-size:13px;color:var(--t1);line-height:1.6;}
+.row-divider{grid-column:1/-1;border:none;border-top:1px solid var(--bdr2);margin:4px 0;}
+.tag-list{display:flex;gap:5px;flex-wrap:wrap;}
+.tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;}
+.tag-nu{background:rgba(130,10,209,.07);color:var(--nu);}
+.tag-green{background:rgba(5,150,105,.08);color:var(--green);}
+.tag-amber{background:rgba(217,119,6,.08);color:var(--amber);}
+.tag-blue{background:rgba(79,70,229,.08);color:var(--blue);}
+.tag-gray{background:var(--bg3);color:var(--t2);}
+.tag-red{background:rgba(220,38,38,.08);color:var(--red);}
+.tag-teal{background:rgba(8,145,178,.08);color:var(--teal);}
+.ai-brief{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(130,10,209,.03),rgba(130,10,209,.06));border:1px solid rgba(130,10,209,.1);border-radius:var(--rs);padding:14px 18px;margin-bottom:10px;}
+.ai-brief::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--nu),var(--nu3));}
+.ai-brief-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--nu);margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--nu);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.ai-brief p{font-size:12px;color:var(--t1);line-height:1.6;}
+.weight-row{margin-bottom:12px;}
+.weight-subtitle{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+.weight-label{display:flex;justify-content:space-between;font-size:11px;color:var(--t2);margin-bottom:5px;}
+.weight-bar{height:7px;border-radius:4px;background:var(--bg3);overflow:hidden;}
+.weight-fill{height:100%;border-radius:4px;}
+.seq-flow{display:flex;flex-direction:column;gap:0;margin-top:6px;}
+.seq-step{display:flex;gap:14px;align-items:flex-start;position:relative;padding-bottom:14px;}
+.seq-step:last-child{padding-bottom:0;}
+.seq-step::before{content:'';position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--bdr2);}
+.seq-step:last-child::before{display:none;}
+.seq-dot{width:29px;height:29px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;z-index:1;}
+.seq-dot-nu{background:var(--nu);}
+.seq-dot-green{background:var(--green);}
+.seq-dot-amber{background:var(--amber);}
+.seq-dot-gray{background:var(--t3);}
+.seq-dot-red{background:var(--red);}
+.seq-dot-blue{background:var(--blue);}
+.seq-content{flex:1;padding-top:5px;}
+.seq-name{font-size:13px;font-weight:700;color:var(--t1);}
+.seq-desc{font-size:12px;color:var(--t2);margin-top:2px;line-height:1.5;}
+.sources-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;margin-top:8px;}
+.source-card{background:var(--bg2);border:1px solid var(--bdr2);border-radius:var(--rs);padding:11px 13px;}
+.source-name{font-size:12px;font-weight:700;color:var(--t1);margin-bottom:2px;}
+.source-type{font-size:11px;color:var(--t2);}
+.source-status{display:inline-block;margin-top:5px;}
+.artifact-box{background:linear-gradient(160deg,#F8F5FF,#fff);border:1.5px solid rgba(130,10,209,.2);border-radius:var(--rs);padding:16px 18px;margin-top:8px;}
+.artifact-name{font-size:14px;font-weight:700;color:var(--nu);margin-bottom:6px;}
+.artifact-fields{display:flex;flex-direction:column;gap:5px;}
+.artifact-field{display:flex;gap:8px;font-size:12px;color:var(--t1);line-height:1.5;}
+.artifact-field::before{content:'›';color:var(--nu);font-weight:700;flex-shrink:0;}
+.open-q{background:rgba(217,119,6,.04);border:1px solid rgba(217,119,6,.15);border-radius:var(--rs);padding:12px 16px;margin-bottom:10px;}
+.open-q-title{font-size:12px;font-weight:700;color:var(--amber);margin-bottom:4px;}
+.open-q-text{font-size:12px;color:var(--t2);line-height:1.5;}
+.val-note{position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(130,10,209,.03),rgba(130,10,209,.06));border:1px solid rgba(130,10,209,.1);border-radius:var(--rs);padding:12px 16px;margin-top:10px;}
+.val-note::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--nu),var(--nu3));}
+.val-note-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--nu);margin-bottom:6px;}
+.val-note-text{font-size:12px;color:var(--t1);line-height:1.6;}
+.orbit-container{margin-bottom:0;}
+/* ── ORBIT + DETAIL SIDE-BY-SIDE ── */
+.orbit-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+.orbit-detail-col {
+  display: flex;
+  flex-direction: column;
+}
+/* When no detail is shown, let orbit span full */
+.orbit-layout.no-detail {
+  grid-template-columns: 1fr;
+}
+/* Compact the spec-banner */
+.spec-banner {
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  border-radius: var(--rs);
+  gap: 12px;
+}
+.spec-banner-icon { font-size: 24px; }
+.spec-banner-title { font-size: 13px; }
+.spec-banner-sub { font-size: 11px; }
+.spec-section-pills { gap: 5px; margin-top: 7px; }
+.spec-pill { font-size: 10px; padding: 3px 9px; }
+.view-toggle { margin-bottom: 12px; }
+
+
+.mod-selector{margin-top:0;}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ── TAB 3: PROCESS FLOW ──
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Timeline spine */
+.pf-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+  position: relative;
+}
+
+/* Left: phase labels column */
+.pf-phases {
+  display: flex; flex-direction: column;
+  padding-right: 24px;
+  position: relative;
+}
+.pf-phases::after {
+  content:''; position:absolute; right:0; top:0; bottom:0; width:1px;
+  background: linear-gradient(180deg, transparent, var(--bdr) 8%, var(--bdr) 92%, transparent);
+}
+
+.pf-phase-block {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 0 0 0 0;
+}
+.pf-phase-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--nu); opacity: .7; margin-bottom: 2px;
+}
+.pf-phase-name {
+  font-size: 13px; font-weight: 700; color: var(--t1); line-height: 1.25;
+}
+.pf-phase-steps {
+  font-size: 10px; color: var(--t3);
+  font-family: var(--fm);
+}
+.pf-phase-time {
+  display: inline-block; margin-top: 4px;
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+}
+
+/* Right: cards column */
+.pf-cards { padding-left: 28px; display: flex; flex-direction: column; gap: 0; }
+
+/* Phase separator */
+.pf-sep {
+  height: 1px; background: var(--bdr2);
+  margin: 20px 0 20px -28px;
+  width: calc(100% + 28px);
+}
+.pf-phases-sep { height: 1px; background: var(--bdr2); margin: 20px 0; }
+
+/* Step row */
+.pf-step {
+  display: flex; gap: 12px; align-items: flex-start;
+  margin-bottom: 10px;
+  position: relative;
+}
+.pf-step:last-child { margin-bottom: 0; }
+
+/* Step indicator */
+.pf-dot {
+  width: 32px; height: 32px; border-radius: 10px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; color: white;
+  font-family: var(--fm);
+  letter-spacing: -.5px;
+}
+
+/* Step card */
+.pf-card {
+  flex: 1; background: white; border: 1px solid var(--bdr2);
+  border-radius: 12px; padding: 12px 16px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.pf-card:hover {
+  border-color: rgba(130,10,209,.15);
+  box-shadow: 0 2px 10px rgba(130,10,209,.05);
+}
+.pf-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 6px;
+}
+.pf-card-name { font-size: 13px; font-weight: 700; color: var(--t1); }
+.pf-card-owner {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 5px;
+  white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+}
+.pf-card-desc { font-size: 11.5px; color: var(--t2); line-height: 1.55; margin-bottom: 8px; }
+
+/* Output pill */
+.pf-output {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(130,10,209,.05); border: 1px solid rgba(130,10,209,.12);
+  border-radius: 6px; padding: 3px 9px;
+  font-size: 10.5px; font-weight: 600; color: var(--nu);
+}
+.pf-output-arrow { opacity: .5; }
+
+/* Parallel group */
+.pf-parallel {
+  background: rgba(130,10,209,.03); border: 1px dashed rgba(130,10,209,.18);
+  border-radius: 12px; padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.pf-parallel-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--nu); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.pf-parallel-label::before { content: '⇉'; font-size: 12px; }
+.pf-parallel-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* AI badge */
+.pf-ai {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 9.5px; font-weight: 700; color: var(--nu); opacity: .8;
+  background: rgba(130,10,209,.06); border-radius: 4px; padding: 2px 6px;
+}
+
+/* Agent connector */
+.pf-agents { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+.pf-agent {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600; color: var(--t2);
+  background: var(--bg3); border-radius: 5px; padding: 2px 7px;
+}
+
+/* Orchestrator track */
+.pf-orch-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #1A1A2E, #2D1B69);
+  border-radius: 12px; padding: 12px 20px;
+  margin-bottom: 24px;
+}
+.pf-orch-icon { font-size: 22px; }
+.pf-orch-body { flex: 1; }
+.pf-orch-title { font-size: 12px; font-weight: 700; color: #E9D5FF; margin-bottom: 2px; }
+.pf-orch-sub { font-size: 11px; color: rgba(255,255,255,.45); line-height: 1.5; }
+.pf-orch-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.pf-orch-pill {
+  font-size: 9.5px; font-weight: 600; color: rgba(255,255,255,.55);
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 4px; padding: 2px 8px;
+}
+
+/* Loop card */
+.pf-loop {
+  background: linear-gradient(135deg, rgba(130,10,209,.06), rgba(130,10,209,.02));
+  border: 1.5px solid rgba(130,10,209,.2); border-radius: 14px;
+  padding: 16px 20px; margin-top: 4px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.pf-loop-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.pf-loop-title { font-size: 13px; font-weight: 700; color: var(--nu); margin-bottom: 4px; }
+.pf-loop-text { font-size: 11.5px; color: var(--t2); line-height: 1.6; }
+
+/* Phase spacer for left column alignment */
+.pf-phase-spacer { flex: 1; min-height: 10px; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<div class="hero">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-dot"></span>
+        Sprint · Product Development Workflow Reinvention
+      </div>
+      <div class="hero-title">Agentic <em>Workflow</em> — Module Map</div>
+      <div class="hero-sub">7 modules orbiting a Living Spec — from kickoff to decision. Explore the architecture, dive into each module spec, or follow the step-by-step flow from S0 to S23.</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num">7</div>
+          <div class="hero-stat-lbl">Modules</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">S0–S23</div>
+          <div class="hero-stat-lbl">Sprint Steps</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">~85%</div>
+          <div class="hero-stat-lbl">AI Target</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num">13–18d</div>
+          <div class="hero-stat-lbl">Active Cycle</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ TOP NAV ═══════════════════════════════ -->
+<nav class="top-nav">
+  <button class="nav-link active" onclick="switchSection('overview',this)">
+    <div class="nav-link-icon">🗺</div>
+    <div class="nav-link-text">
+      <div class="nav-link-title">Workflow Map</div>
+      <div class="nav-link-desc">7 modules · orbit + flow views</div>
+    </div>
+  </button>
+  <div class="nav-sep"></div>
+  <button class="nav-link" onclick="switchSection('flow',this)">
+    <div class="nav-link-icon">⏱</div>
+    <div class="nav-link-text">
+      <div class="nav-link-title">Process Flow</div>
+      <div class="nav-link-desc">Step-by-step S0 → S23</div>
+    </div>
+  </button>
+  <div class="nav-sep"></div>
+  <button class="nav-link" onclick="switchSection('specs',this)">
+    <div class="nav-link-icon">📋</div>
+    <div class="nav-link-text">
+      <div class="nav-link-title">Module Specs</div>
+      <div class="nav-link-desc">Knowledge · Skills · Tools</div>
+    </div>
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════ SECTION 1: WORKFLOW MAP ═══════════════════════════════ -->
+<div id="section-overview" class="section active">
+  <div class="page-wrap">
+    <div class="sec-header">
+      <div class="sec-header-icon">🗺</div>
+      <div class="sec-header-body">
+        <div class="sec-eyebrow">Workflow Architecture</div>
+        <div class="sec-title">Module <em>Map</em></div>
+        <div class="sec-sub">All modules orbiting the central Spec — showing who owns what, what they produce, and how artifacts flow between chapters. Click any module to explore its inputs, outputs, and connections.</div>
+      </div>
+    </div>
+
+<!-- Spec banner -->
+  <div class="spec-banner">
+    <div class="spec-banner-icon">📋</div>
+    <div>
+      <div class="spec-banner-title">The Living Spec — Central Coordination Artifact</div>
+      <div class="spec-banner-sub">Every module reads from and writes to the Spec. No sequential handoffs — shared context means any module can start as soon as its section is ready.</div>
+      <div class="spec-section-pills">
+        <span class="spec-pill">📊 Evidence</span>
+        <span class="spec-pill">🎯 Intent</span>
+        <span class="spec-pill">🔬 Build Spec</span>
+        <span class="spec-pill">✅ Verdict</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="view-toggle">
+    <button class="view-btn active" onclick="switchView('orbit', this)">🪐 Orbit View</button>
+    <button class="view-btn" onclick="switchView('flow', this)">↓ Flow View</button>
+  </div>
+
+  <!-- ── ORBIT VIEW ── -->
+  <div id="view-orbit" class="active">
+    <div class="orbit-layout">
+    <div>
+    <div class="orbit-container">
+      <div class="orbit-inner">
+
+        <!-- SVG lines -->
+        <svg class="orbit-svg" viewBox="0 0 800 480" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#D1D5DB"/>
+            </marker>
+            <marker id="arr-nu" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#820AD1"/>
+            </marker>
+          </defs>
+          <!-- Orbit rings -->
+          <ellipse cx="400" cy="240" rx="280" ry="180" fill="none" stroke="#F3F4F6" stroke-width="1.5" stroke-dasharray="6,4"/>
+          <!-- Connection lines (spoke-style) -->
+          <line x1="400" y1="240" x2="175" y2="80"  stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="400" y2="52"  stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="625" y2="80"  stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="660" y2="240" stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="625" y2="400" stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="175" y2="400" stroke="#E5E7EB" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="400" y1="240" x2="140" y2="240" stroke="#820AD1" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arr-nu)"/>
+          <!-- Feedback loop label -->
+          <text x="245" y="230" font-size="9" fill="#9CA3AF" font-family="system-ui" text-anchor="middle">Orchestrator</text>
+        </svg>
+
+        <!-- Central Spec -->
+        <div class="spec-core" style="left:50%; top:50%;" onclick="showDetail('spec')">
+          <div class="spec-icon">📋</div>
+          <div class="spec-label">Living<br>Spec</div>
+          <div class="spec-sub">Evidence · Intent<br>Build · Verdict</div>
+        </div>
+
+        <!-- Nodes: positioned around the orbit -->
+        <!-- Top-left: Market & User Insights -->
+        <div class="orbit-node" style="left:16%; top:8%;" onclick="showDetail('research')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#F3E8FF,#EDE9FE);">
+            <div class="orbit-node-icon">🔍</div>
+            <div class="orbit-node-label" style="color:#820AD1;">Market &<br>User Insights</div>
+            <div class="orbit-node-steps" style="color:#9B30FF;">S0–S2</div>
+          </div>
+        </div>
+
+        <!-- Top-center: Product (Insight & Strategy) -->
+        <div class="orbit-node" style="left:50%; top:0%; transform:translateX(-50%);" onclick="showDetail('product')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);">
+            <div class="orbit-node-icon">🧭</div>
+            <div class="orbit-node-label" style="color:#4F46E5;">Product &<br>Strategy</div>
+            <div class="orbit-node-steps" style="color:#6366F1;">S0–S1 · S7–S9</div>
+          </div>
+        </div>
+
+        <!-- Top-right: Design -->
+        <div class="orbit-node" style="right:16%; top:8%;" onclick="showDetail('design')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5);">
+            <div class="orbit-node-icon">🎨</div>
+            <div class="orbit-node-label" style="color:#059669;">Design &<br>Prototyping</div>
+            <div class="orbit-node-steps" style="color:#10B981;">S5–S6</div>
+          </div>
+        </div>
+
+        <!-- Right: Engineering -->
+        <div class="orbit-node" style="right:4%; top:50%; transform:translateY(-50%);" onclick="showDetail('engineering')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#FFF7ED,#FED7AA);">
+            <div class="orbit-node-icon">⚙️</div>
+            <div class="orbit-node-label" style="color:#D97706;">Engineering<br>& QA</div>
+            <div class="orbit-node-steps" style="color:#F59E0B;">S10–S18</div>
+          </div>
+        </div>
+
+        <!-- Bottom-right: Decision & Observability -->
+        <div class="orbit-node" style="right:16%; bottom:8%;" onclick="showDetail('decision')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#FFF1F2,#FFE4E6);">
+            <div class="orbit-node-icon">📊</div>
+            <div class="orbit-node-label" style="color:#E11D48;">Decision &<br>Observability</div>
+            <div class="orbit-node-steps" style="color:#F43F5E;">S19–S23</div>
+          </div>
+        </div>
+
+        <!-- Bottom-left: BA / Analytics -->
+        <div class="orbit-node" style="left:16%; bottom:8%;" onclick="showDetail('ba')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#F0FDFA,#CCFBF1);">
+            <div class="orbit-node-icon">📐</div>
+            <div class="orbit-node-label" style="color:#0891B2;">Analytics<br>& BA</div>
+            <div class="orbit-node-steps" style="color:#06B6D4;">S7–S9 · S19</div>
+          </div>
+        </div>
+
+        <!-- Left: Orchestrator -->
+        <div class="orbit-node" style="left:4%; top:50%; transform:translateY(-50%);" onclick="showDetail('orchestrator')">
+          <div class="orbit-node-inner" style="background:linear-gradient(135deg,#1A1A2E,#2D1B69); border:2px dashed rgba(130,10,209,0.4);">
+            <div class="orbit-node-icon">🤖</div>
+            <div class="orbit-node-label" style="color:#E9D5FF;">Orchestrator<br>Agent</div>
+            <div class="orbit-node-steps" style="color:#A855F7;">Always on</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </div><!-- /orbit col -->
+    <div class="orbit-detail-col">
+
+    <!-- Detail panels -->
+    <div id="detail-spec" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">📋</div>
+        <div>
+          <div class="detail-title">The Living <em>Spec</em></div>
+          <div class="detail-subtitle">Central coordination artifact — replaces sequential handoffs with shared, always-current context</div>
+        </div>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:rgba(130,10,209,0.04); border:1px solid rgba(130,10,209,0.1);">
+          <div class="io-label" style="color:var(--nu);">📊 Evidence Section</div>
+          <div class="io-item" style="color:var(--t2);">Written by: Market & User Insights, Product & Strategy</div>
+          <div class="io-item" style="color:var(--t2);">Contains: Insight Brief, Evidence Pack, sufficiency score</div>
+          <div class="io-item" style="color:var(--t2);">Read by: Design, BA, Hypothesis design</div>
+        </div>
+        <div class="io-box" style="background:rgba(79,70,229,0.04); border:1px solid rgba(79,70,229,0.1);">
+          <div class="io-label" style="color:var(--blue);">🎯 Intent Section</div>
+          <div class="io-item" style="color:var(--t2);">Written by: Design & Prototyping</div>
+          <div class="io-item" style="color:var(--t2);">Contains: Validated prototypes, design.md, variant set</div>
+          <div class="io-item" style="color:var(--t2);">Read by: Engineering, Hypothesis design</div>
+        </div>
+        <div class="io-box" style="background:rgba(5,150,105,0.04); border:1px solid rgba(5,150,105,0.1);">
+          <div class="io-label" style="color:var(--green);">🔬 Build Spec Section</div>
+          <div class="io-item" style="color:var(--t2);">Written by: BA/Analytics, Engineering</div>
+          <div class="io-item" style="color:var(--t2);">Contains: Experiment Blueprint, ADR, Cockpit config</div>
+          <div class="io-item" style="color:var(--t2);">Read by: Experiment Ops, Decision</div>
+        </div>
+        <div class="io-box" style="background:rgba(225,29,72,0.04); border:1px solid rgba(225,29,72,0.1);">
+          <div class="io-label" style="color:var(--red);">✅ Verdict Section</div>
+          <div class="io-item" style="color:var(--t2);">Written by: Decision & Observability</div>
+          <div class="io-item" style="color:var(--t2);">Contains: Experiment result, Scale/Kill decision, learnings</div>
+          <div class="io-item" style="color:var(--t2);">Feeds back into: Evidence section of the next cycle</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="detail-research" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">🔍</div>
+        <div>
+          <div class="detail-title">Market & User <em>Insights</em></div>
+          <div class="detail-subtitle">Automates evidence discovery at kickoff — your module</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(130,10,209,0.07); color:var(--nu);">Research Chapter</span>
+            <span class="steps-badge">Steps S0 → S2</span>
+            <span class="steps-badge">Target: 0.5 days</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Receives from →</span>
+        <span class="ctag" style="background:rgba(79,70,229,0.08); color:var(--blue);" onclick="showDetail('product')">🧭 Product & Strategy</span>
+        <span class="connects-label" style="margin-left:8px;">Feeds into →</span>
+        <span class="ctag" style="background:rgba(5,150,105,0.08); color:var(--green);" onclick="showDetail('design')">🎨 Design</span>
+        <span class="ctag" style="background:rgba(8,145,178,0.08); color:var(--teal);" onclick="showDetail('ba')">📐 BA / Analytics</span>
+        <span class="ctag" style="background:rgba(79,70,229,0.08); color:var(--blue);" onclick="showDetail('product')">🧭 Product</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">Insight Brief from PM (product area, geo, core question)</div>
+          <div class="io-item">BU Strategy one-pager</div>
+          <div class="io-item">Linked Jira initiative</div>
+        </div>
+        <div class="io-box" style="background:rgba(130,10,209,0.04); border:1px solid rgba(130,10,209,0.1);">
+          <div class="io-label" style="color:var(--nu);">📤 Output → Spec: Evidence</div>
+          <div class="io-item"><strong>Evidence Pack</strong> — research synthesis + quant signals + gaps</div>
+          <div class="io-item"><strong>Evidence Sufficiency Score</strong> (0–1, 5 dimensions)</div>
+          <div class="io-item">Suggested research plan if score &lt; 0.4</div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Agents</div>
+        <span class="artifact-pill">🤖 Evidence Discovery Agent</span>
+        <span class="artifact-pill">🔬 Insight Amplifier</span>
+        <span class="artifact-pill">👤 Synthetic User Validator</span>
+      </div>
+    </div>
+
+    <div id="detail-product" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">🧭</div>
+        <div>
+          <div class="detail-title">Product & <em>Strategy</em></div>
+          <div class="detail-subtitle">Owns the question, the hypothesis, and the go/no-go gates throughout the cycle</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(79,70,229,0.08); color:var(--blue);">Product Chapter</span>
+            <span class="steps-badge">S0–S1 (kickoff) · S7–S9 (hypothesis) · S19–S21 (decision)</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Triggers →</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);" onclick="showDetail('research')">🔍 Market Insights</span>
+        <span class="ctag" style="background:rgba(5,150,105,0.08); color:var(--green);" onclick="showDetail('design')">🎨 Design</span>
+        <span class="connects-label" style="margin-left:8px;">Gates →</span>
+        <span class="ctag" style="background:rgba(217,119,6,0.08); color:var(--amber);" onclick="showDetail('engineering')">⚙️ Engineering</span>
+        <span class="ctag" style="background:rgba(225,29,72,0.08); color:var(--red);" onclick="showDetail('decision')">📊 Decision</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">BU strategy, market signals, leadership direction</div>
+          <div class="io-item">Evidence Pack + Sufficiency Score (from Research)</div>
+          <div class="io-item">Design Artifact + Feasibility signals (from Design + Eng)</div>
+          <div class="io-item">Experiment Dataset (from Engineering)</div>
+        </div>
+        <div class="io-box" style="background:rgba(79,70,229,0.04); border:1px solid rgba(79,70,229,0.1);">
+          <div class="io-label" style="color:var(--blue);">📤 Outputs → Spec: Evidence + Build</div>
+          <div class="io-item"><strong>Insight Brief</strong> — triggers the whole cycle</div>
+          <div class="io-item"><strong>Experiment Blueprint sign-off</strong> — go/no-go gate</div>
+          <div class="io-item"><strong>Scale / Iterate / Kill decision</strong></div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Artifacts Owned</div>
+        <span class="artifact-pill">📄 Insight Brief</span>
+        <span class="artifact-pill">🔬 Experiment Blueprint (co-owner)</span>
+        <span class="artifact-pill">✅ Decision Record</span>
+      </div>
+    </div>
+
+    <div id="detail-design" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">🎨</div>
+        <div>
+          <div class="detail-title">Design & <em>Prototyping</em></div>
+          <div class="detail-subtitle">Translates evidence into validated, NuDS-compliant prototypes — runs in parallel with evidence scan</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(5,150,105,0.08); color:var(--green);">Design Chapter</span>
+            <span class="steps-badge">Steps S5–S6</span>
+            <span class="steps-badge">Target: 2–5 days</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Receives from →</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);" onclick="showDetail('research')">🔍 Market Insights</span>
+        <span class="ctag" style="background:rgba(79,70,229,0.08); color:var(--blue);" onclick="showDetail('product')">🧭 Product</span>
+        <span class="connects-label" style="margin-left:8px;">Feeds into →</span>
+        <span class="ctag" style="background:rgba(8,145,178,0.08); color:var(--teal);" onclick="showDetail('ba')">📐 BA / Analytics</span>
+        <span class="ctag" style="background:rgba(217,119,6,0.08); color:var(--amber);" onclick="showDetail('engineering')">⚙️ Engineering</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">Insight Brief (starts in parallel with Research)</div>
+          <div class="io-item">Evidence Pack when available (enriches hi-fi)</div>
+          <div class="io-item">NuDS component library + prior design explorations</div>
+        </div>
+        <div class="io-box" style="background:rgba(5,150,105,0.04); border:1px solid rgba(5,150,105,0.1);">
+          <div class="io-label" style="color:var(--green);">📤 Output → Spec: Intent</div>
+          <div class="io-item"><strong>Design Artifact</strong> — Figma prototypes, design.md, variant set</div>
+          <div class="io-item"><strong>NuDS compliance check</strong></div>
+          <div class="io-item">Low-fi first → hi-fi only after PM + Designer sign-off on variants</div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Agents</div>
+        <span class="artifact-pill">🤖 Design Copilot</span>
+        <span class="artifact-pill">🧑‍🎨 Curie + Oppenheimer</span>
+        <span class="artifact-pill">✅ NuDS Compliance Agent</span>
+      </div>
+    </div>
+
+    <div id="detail-ba" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">📐</div>
+        <div>
+          <div class="detail-title">Analytics & <em>BA</em></div>
+          <div class="detail-subtitle">Structures the experiment — metrics, guardrails, sample sizes, and post-experiment statistical analysis</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(8,145,178,0.08); color:var(--teal);">BA / Analytics Chapter</span>
+            <span class="steps-badge">S7–S9 (blueprint) · S19 (analysis)</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Receives from →</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);" onclick="showDetail('research')">🔍 Market Insights</span>
+        <span class="ctag" style="background:rgba(5,150,105,0.08); color:var(--green);" onclick="showDetail('design')">🎨 Design</span>
+        <span class="connects-label" style="margin-left:8px;">Feeds into →</span>
+        <span class="ctag" style="background:rgba(217,119,6,0.08); color:var(--amber);" onclick="showDetail('engineering')">⚙️ Engineering</span>
+        <span class="ctag" style="background:rgba(225,29,72,0.08); color:var(--red);" onclick="showDetail('decision')">📊 Decision</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">Evidence Pack + Sufficiency Score</div>
+          <div class="io-item">Design Artifact (variant definitions)</div>
+          <div class="io-item">Feasibility signals from Engineering</div>
+          <div class="io-item">Experiment Dataset (for post-analysis)</div>
+        </div>
+        <div class="io-box" style="background:rgba(8,145,178,0.04); border:1px solid rgba(8,145,178,0.12);">
+          <div class="io-label" style="color:var(--teal);">📤 Output → Spec: Build</div>
+          <div class="io-item"><strong>Experiment Blueprint</strong> — hypothesis, metrics, guardrails, sample size</div>
+          <div class="io-item"><strong>Cockpit metric configuration</strong></div>
+          <div class="io-item"><strong>Statistical analysis</strong> — post-experiment, feeds Verdict</div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Agents</div>
+        <span class="artifact-pill">🤖 Hypothesis Validation Copilot</span>
+        <span class="artifact-pill">📏 Experiment Plan Copilot</span>
+        <span class="artifact-pill">📊 Decision Framework Copilot</span>
+      </div>
+    </div>
+
+    <div id="detail-engineering" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">⚙️</div>
+        <div>
+          <div class="detail-title">Engineering <em>& QA</em></div>
+          <div class="detail-subtitle">Builds, validates, launches and monitors — from ADR to experiment run window</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(217,119,6,0.08); color:var(--amber);">Engineering Chapter</span>
+            <span class="steps-badge">S10–S18</span>
+            <span class="steps-badge">Target: 7–10 days (vs 17 today)</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Receives from →</span>
+        <span class="ctag" style="background:rgba(5,150,105,0.08); color:var(--green);" onclick="showDetail('design')">🎨 Design</span>
+        <span class="ctag" style="background:rgba(8,145,178,0.08); color:var(--teal);" onclick="showDetail('ba')">📐 BA</span>
+        <span class="connects-label" style="margin-left:8px;">Feeds into →</span>
+        <span class="ctag" style="background:rgba(225,29,72,0.08); color:var(--red);" onclick="showDetail('decision')">📊 Decision</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">Experiment Blueprint (signed off by PM + BA)</div>
+          <div class="io-item">Design Artifact (Figma + design.md)</div>
+          <div class="io-item">ADR repository + service ownership graph</div>
+        </div>
+        <div class="io-box" style="background:rgba(217,119,6,0.04); border:1px solid rgba(217,119,6,0.12);">
+          <div class="io-label" style="color:var(--amber);">📤 Output → Spec: Build</div>
+          <div class="io-item"><strong>Production code</strong> — ADR + implementation</div>
+          <div class="io-item"><strong>Cockpit config</strong> — feature flags, variant setup</div>
+          <div class="io-item"><strong>Experiment Dataset</strong> — live results during run window</div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Agents</div>
+        <span class="artifact-pill">🏭 Code Factory</span>
+        <span class="artifact-pill">📄 ADR Copilot</span>
+        <span class="artifact-pill">🔁 Automated Regression</span>
+      </div>
+    </div>
+
+    <div id="detail-decision" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">📊</div>
+        <div>
+          <div class="detail-title">Decision & <em>Observability</em></div>
+          <div class="detail-subtitle">Closes the loop — analyze results, make the Scale/Kill call, feed learnings back into Evidence</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(225,29,72,0.08); color:var(--red);">Cross-chapter</span>
+            <span class="steps-badge">S19–S23</span>
+            <span class="steps-badge">Feeds back into next cycle</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Receives from →</span>
+        <span class="ctag" style="background:rgba(217,119,6,0.08); color:var(--amber);" onclick="showDetail('engineering')">⚙️ Engineering</span>
+        <span class="ctag" style="background:rgba(8,145,178,0.08); color:var(--teal);" onclick="showDetail('ba')">📐 BA</span>
+        <span class="connects-label" style="margin-left:8px;">Feeds back into →</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);" onclick="showDetail('research')">🔍 Market Insights</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">📥 Inputs</div>
+          <div class="io-item">Experiment Dataset (from Engineering)</div>
+          <div class="io-item">Statistical analysis (from BA)</div>
+          <div class="io-item">Experiment Blueprint (for hypothesis context)</div>
+        </div>
+        <div class="io-box" style="background:rgba(225,29,72,0.04); border:1px solid rgba(225,29,72,0.1);">
+          <div class="io-label" style="color:var(--red);">📤 Output → Spec: Verdict</div>
+          <div class="io-item"><strong>Experiment Result artifact</strong> — auto-synced to Jira + Confluence</div>
+          <div class="io-item"><strong>Scale / Iterate / Kill decision</strong></div>
+          <div class="io-item"><strong>Daily Observability Digest</strong> post-rollout</div>
+          <div class="io-item">Learnings loop → Evidence section of next cycle</div>
+        </div>
+      </div>
+      <div class="key-artifacts">
+        <div class="key-artifacts-title">Key Agents</div>
+        <span class="artifact-pill">📊 Decision Framework Copilot</span>
+        <span class="artifact-pill">📝 Auto-Doc Agent</span>
+        <span class="artifact-pill">👁 Observability Agent</span>
+      </div>
+    </div>
+
+    <div id="detail-orchestrator" class="detail-panel">
+      <div class="detail-header">
+        <div class="detail-icon">🤖</div>
+        <div>
+          <div class="detail-title">Orchestrator <em>Agent</em></div>
+          <div class="detail-subtitle">Always-on coordinator — manages the Spec, enforces SLAs, triggers modules, and surfaces blockers without meetings</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span class="chapter-badge" style="background:rgba(130,10,209,0.07); color:var(--nu);">Product Operations</span>
+            <span class="steps-badge">S0 → S23 (continuous)</span>
+          </div>
+        </div>
+      </div>
+      <div class="connects-row">
+        <span class="connects-label">Monitors all →</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);">All 6 modules</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);">All SLA timers</span>
+        <span class="ctag" style="background:rgba(130,10,209,0.07); color:var(--nu);">All go/no-go gates</span>
+      </div>
+      <div class="io-grid">
+        <div class="io-box" style="background:var(--bg2); border:1px solid var(--bdr2);">
+          <div class="io-label" style="color:var(--t3);">What it watches</div>
+          <div class="io-item">Spec completeness — are required sections filled?</div>
+          <div class="io-item">SLA timers — who is overdue?</div>
+          <div class="io-item">Go/no-go gates — has each been explicitly resolved?</div>
+          <div class="io-item">Parallel opportunities — what can start now?</div>
+        </div>
+        <div class="io-box" style="background:rgba(130,10,209,0.04); border:1px solid rgba(130,10,209,0.1);">
+          <div class="io-label" style="color:var(--nu);">What it does</div>
+          <div class="io-item">Auto-triggers modules when their input artifacts are ready</div>
+          <div class="io-item">Slack alerts when SLAs are missed</div>
+          <div class="io-item">Escalates to PM lead if gate is unresolved &gt;4h</div>
+          <div class="io-item">Produces daily Spec status digest</div>
+        </div>
+      </div>
+      <div class="suggestion-box" style="margin-top:0;">
+        <div class="suggestion-title">💡 Why Orchestrator is its own module, not just a PM task</div>
+        <div class="suggestion-text">The sprint plan shows 55–65% of current cycle time is <em>wait time</em> — not active work. Almost all of it is orchestration failure: missed SLAs, unclear triggers, no escalation rules. A dedicated Orchestrator Agent that watches the Spec and fires automatically removes this waste without adding coordination overhead. The PM's job becomes judgment, not scheduling.</div>
+      </div>
+    </div>
+
+    <div id="detail-default" class="detail-panel active" style="text-align:center; padding:32px 20px; color:var(--t2);">
+      <div style="font-size:28px; margin-bottom:10px;">👆</div>
+      <div style="font-size:14px; font-weight:600; color:var(--t1); margin-bottom:6px;">Click any module to explore it</div>
+      <div style="font-size:13px;">See inputs, outputs, connected chapters, and key agents for each node</div>
+    </div>
+    </div><!-- /orbit-detail-col -->
+    </div><!-- /orbit-layout -->
+  </div>
+
+  <!-- ── FLOW VIEW ── -->
+  <div id="view-flow">
+    <div class="flow-wrapper">
+
+      <!-- Phase 0: Kickoff -->
+      <div class="flow-phase">
+        <div class="flow-phase-label">Phase 1 · Kickoff & Discovery (S0–S6)</div>
+        <div class="flow-row">
+          <div class="flow-card" style="border-left:3px solid var(--blue);" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('product')">
+            <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--blue);"></div>
+            <div class="flow-card-icon">🧭</div>
+            <div class="flow-card-title">Product & Strategy</div>
+            <div class="flow-card-steps">S0–S1</div>
+            <div class="flow-card-out">Writes <strong>Insight Brief</strong> → triggers Research + Design in parallel</div>
+          </div>
+        </div>
+        <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+        <div class="parallel-bar">
+          <div class="parallel-label">⚡ Parallel — both start simultaneously from Insight Brief</div>
+          <div class="flow-row">
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('research')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--nu);"></div>
+              <div class="flow-card-icon">🔍</div>
+              <div class="flow-card-title">Market & User Insights</div>
+              <div class="flow-card-steps">S0–S2 · ~0.5 days</div>
+              <div class="flow-card-out">Produces <strong>Evidence Pack</strong> + Sufficiency Score → Spec: Evidence</div>
+            </div>
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('design')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--green);"></div>
+              <div class="flow-card-icon">🎨</div>
+              <div class="flow-card-title">Design & Prototyping</div>
+              <div class="flow-card-steps">S5–S6 · ~2–5 days</div>
+              <div class="flow-card-out">Produces <strong>Design Artifact</strong> (low-fi first) → Spec: Intent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+
+      <!-- Phase 2: Blueprint -->
+      <div class="flow-phase">
+        <div class="flow-phase-label">Phase 2 · Experiment Blueprint (S7–S9)</div>
+        <div class="parallel-bar">
+          <div class="parallel-label">⚡ Parallel — both run against the same Blueprint artifact</div>
+          <div class="flow-row">
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('ba')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--teal);"></div>
+              <div class="flow-card-icon">📐</div>
+              <div class="flow-card-title">Analytics & BA</div>
+              <div class="flow-card-steps">S7–S9 · ~3–5 days</div>
+              <div class="flow-card-out">Hypothesis validation + metrics + guardrails + sample size → <strong>Experiment Blueprint</strong></div>
+            </div>
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('product')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--blue);"></div>
+              <div class="flow-card-icon">🧭</div>
+              <div class="flow-card-title">Product & Strategy</div>
+              <div class="flow-card-steps">S7–S9 · Go/no-go gate</div>
+              <div class="flow-card-out">Reviews Blueprint → <strong>Sign-off</strong> to proceed to build</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+
+      <!-- Phase 3: Build -->
+      <div class="flow-phase">
+        <div class="flow-phase-label">Phase 3 · Build & Launch (S10–S18)</div>
+        <div class="flow-row">
+          <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('engineering')">
+            <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--amber);"></div>
+            <div class="flow-card-icon">⚙️</div>
+            <div class="flow-card-title">Engineering & QA</div>
+            <div class="flow-card-steps">S10–S18 · ~7–10 days (target)</div>
+            <div class="flow-card-out">ADR → Build → QA → Cockpit setup → Launch → <strong>Experiment Dataset</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+
+      <!-- Phase 4: Decision -->
+      <div class="flow-phase">
+        <div class="flow-phase-label">Phase 4 · Decision & Loop-back (S19–S23)</div>
+        <div class="parallel-bar">
+          <div class="parallel-label">⚡ Parallel — analysis and documentation run together</div>
+          <div class="flow-row">
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('ba')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--teal);"></div>
+              <div class="flow-card-icon">📐</div>
+              <div class="flow-card-title">Analytics & BA</div>
+              <div class="flow-card-steps">S19</div>
+              <div class="flow-card-out">Statistical analysis → Decision Framework draft</div>
+            </div>
+            <div class="flow-card" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('decision')">
+              <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--red);"></div>
+              <div class="flow-card-icon">📊</div>
+              <div class="flow-card-title">Decision & Observability</div>
+              <div class="flow-card-steps">S19–S23</div>
+              <div class="flow-card-out"><strong>Scale/Kill decision</strong> + auto-docs + daily digest → <strong>feeds next cycle</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+
+      <!-- Feedback -->
+      <div class="flow-phase">
+        <div class="flow-phase-label">Loop · Learnings feed back to Evidence</div>
+        <div class="flow-row">
+          <div class="flow-card" style="background:linear-gradient(135deg,#F8F5FF,white);" onclick="switchView('orbit',document.querySelectorAll('.view-btn')[0]); showDetail('spec')">
+            <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,var(--nu),var(--nu3));"></div>
+            <div class="flow-card-icon">🔁</div>
+            <div class="flow-card-title">Verdict → Evidence (next cycle)</div>
+            <div class="flow-card-steps">Spec: Verdict section → Spec: Evidence section</div>
+            <div class="flow-card-out">Experiment Result artifact becomes prior experiment signal for the <strong>next Evidence Pack</strong>. Score improves automatically over time.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orchestrator note -->
+      <div class="suggestion-box" style="margin-top:24px;">
+        <div class="suggestion-title">🤖 Orchestrator Agent — runs across all phases</div>
+        <div class="suggestion-text">The Orchestrator watches the Spec continuously, auto-triggers modules when their inputs are ready, fires SLA alerts, escalates unresolved gates, and produces a daily status digest. It's what eliminates the 55–65% wait time without adding PM scheduling overhead. Every arrow in this diagram is automated by the Orchestrator.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Module suggestion note -->
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SECTION 2: PROCESS FLOW ═══════════════════════════════ -->
+<div id="section-flow" class="section">
+  <div class="page-wrap-wide">
+    <div class="sec-header">
+      <div class="sec-header-icon">⏱</div>
+      <div class="sec-header-body">
+        <div class="sec-eyebrow">End-to-End Process</div>
+        <div class="sec-title">Process <em>Flow</em></div>
+        <div class="sec-sub">The full product development cycle from Insight Brief to Scale/Kill decision — showing parallel tracks, AI automation per step, gates, SLAs, and the learning loop back into Evidence.</div>
+      </div>
+    </div>
+
+    <!-- Orchestrator bar -->
+    <div class="pf-orch-bar">
+      <div class="pf-orch-icon">🤖</div>
+      <div class="pf-orch-body">
+        <div class="pf-orch-title">Orchestrator Agent — runs continuously across all phases (S0 → S23)</div>
+        <div class="pf-orch-sub">Watches the Living Spec, auto-triggers modules when inputs are ready, fires Slack SLA alerts, escalates unresolved gates, produces daily status digest.</div>
+        <div class="pf-orch-pills">
+          <span class="pf-orch-pill">⚡ Auto-triggers modules</span>
+          <span class="pf-orch-pill">⏱ SLA timers on all steps</span>
+          <span class="pf-orch-pill">🚦 Go/no-go gate enforcement</span>
+          <span class="pf-orch-pill">📣 Escalation → PM lead if gate >4h</span>
+          <span class="pf-orch-pill">📊 Daily Spec status digest</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-layout">
+
+      <!-- LEFT: Phase labels -->
+      <div class="pf-phases">
+
+        <!-- Phase 1 -->
+        <div class="pf-phase-block" style="padding-top:0;">
+          <div class="pf-phase-label">Phase 1</div>
+          <div class="pf-phase-name">Kickoff &amp;<br>Discovery</div>
+          <div class="pf-phase-steps">S0 – S6</div>
+          <span class="pf-phase-time tag tag-nu">~2–4 days</span>
+        </div>
+        <div class="pf-phases-sep" style="margin:20px 0;"></div>
+
+        <!-- Phase 2 -->
+        <div class="pf-phase-block">
+          <div class="pf-phase-label">Phase 2</div>
+          <div class="pf-phase-name">Experiment<br>Blueprint</div>
+          <div class="pf-phase-steps">S7 – S9</div>
+          <span class="pf-phase-time tag tag-teal">~3–5 days</span>
+        </div>
+        <div class="pf-phases-sep" style="margin:20px 0;"></div>
+
+        <!-- Phase 3 -->
+        <div class="pf-phase-block">
+          <div class="pf-phase-label">Phase 3</div>
+          <div class="pf-phase-name">Build &amp;<br>Launch</div>
+          <div class="pf-phase-steps">S10 – S18</div>
+          <span class="pf-phase-time tag tag-amber">~7–10 days</span>
+        </div>
+        <div class="pf-phases-sep" style="margin:20px 0;"></div>
+
+        <!-- Phase 4 -->
+        <div class="pf-phase-block">
+          <div class="pf-phase-label">Phase 4</div>
+          <div class="pf-phase-name">Decision &amp;<br>Loop-back</div>
+          <div class="pf-phase-steps">S19 – S23</div>
+          <span class="pf-phase-time tag tag-red">~5–7 days</span>
+        </div>
+        <div class="pf-phases-sep" style="margin:20px 0;"></div>
+
+        <!-- Loop -->
+        <div class="pf-phase-block">
+          <div class="pf-phase-label">Loop</div>
+          <div class="pf-phase-name">Learning<br>feeds back</div>
+          <div class="pf-phase-steps">Verdict → Evidence</div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Cards -->
+      <div class="pf-cards">
+
+        <!-- ── PHASE 1 ── -->
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--blue);">S0</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">🧭 Insight Brief written</div>
+              <div class="pf-card-owner tag tag-blue">Product &amp; Strategy</div>
+            </div>
+            <div class="pf-card-desc">PM authors the Insight Brief: initiative name, product area, geo scope, and the core question to be answered. Completeness validated automatically — missing fields trigger Slack ping before the cycle starts.</div>
+            <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Evidence · Insight Brief</div>
+            <div class="pf-agents">
+              <span class="pf-agent">🤖 Insight Brief validator</span>
+              <span class="pf-ai">90% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parallel: Research + Design -->
+        <div class="pf-parallel">
+          <div class="pf-parallel-label">Parallel — both triggered simultaneously by the Insight Brief</div>
+          <div class="pf-parallel-cols">
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--nu);">S1–S2</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">🔍 Evidence Discovery</div>
+                    <div class="pf-card-owner tag tag-nu">Market &amp; User Insights</div>
+                  </div>
+                  <div class="pf-card-desc">Agent queries all sources in parallel: 40+ NotebookLM repos, Glean, Databricks, Jira, KB Guides. ~2–4 hours. Computes Evidence Sufficiency Score (5 dimensions). Score gate: ≥0.7 proceed · 0.4–0.7 PM judgment · &lt;0.4 research plan.</div>
+                  <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Evidence Pack + Score</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">🤖 Evidence Discovery Agent</span>
+                    <span class="pf-agent">🔬 Insight Amplifier</span>
+                    <span class="pf-ai">70% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--green);">S5–S6</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">🎨 Design &amp; Prototyping</div>
+                    <div class="pf-card-owner tag tag-green">Design Chapter</div>
+                  </div>
+                  <div class="pf-card-desc">Starts with low-fi from Insight Brief only. Evidence Pack enriches hi-fi when available. Gate: PM + Designer agree on variant set at low-fi before any hi-fi investment. NuDS compliance auto-checked before publishing.</div>
+                  <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Intent · Design Artifact</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">🎨 Design Copilot</span>
+                    <span class="pf-agent">✅ NuDS Compliance Agent</span>
+                    <span class="pf-ai">50% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-sep"></div>
+
+        <!-- ── PHASE 2 ── -->
+        <div class="pf-parallel" style="margin-bottom:10px;">
+          <div class="pf-parallel-label">Parallel — S7 + S8 run simultaneously against the same artifact</div>
+          <div class="pf-parallel-cols">
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--teal);">S7</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">📐 Hypothesis Validation</div>
+                    <div class="pf-card-owner tag tag-teal">Analytics &amp; BA</div>
+                  </div>
+                  <div class="pf-card-desc">Copilot proposes hypothesis + metrics + sample size from Evidence Pack. Checks prior experiments for similar hypotheses. BA refines. ~1–2 days.</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">📏 Experiment Plan Copilot</span>
+                    <span class="pf-ai">65% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--teal);">S8</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">⚙️ Feasibility Scan</div>
+                    <div class="pf-card-owner tag tag-amber">Eng joins early</div>
+                  </div>
+                  <div class="pf-card-desc">Engineering joins at S8, not S10. Feasibility Agent auto-scans ADRs + dependency graph. Prevents late discovery cascading (the "Pix Financing pattern" that balloons ADR to 3–4 weeks).</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">🔍 Feasibility Checklist Agent</span>
+                    <span class="pf-ai">75% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--teal);">S9</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">🔬 Experiment Blueprint sign-off</div>
+              <div class="pf-card-owner tag tag-blue">PM + BA gate</div>
+            </div>
+            <div class="pf-card-desc">Synthesizes S7+S8 into a single Blueprint artifact: hypothesis, metrics, guardrails, sample size, pre-agreed Scale/Kill thresholds. PM + BA sign off. No code written before this gate. Guardrails locked upfront — not ad-hoc post-experiment.</div>
+            <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Build · Experiment Blueprint</div>
+            <div class="pf-agents">
+              <span class="pf-agent">📊 Decision Framework Copilot</span>
+              <span class="pf-ai">60% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-sep"></div>
+
+        <!-- ── PHASE 3 ── -->
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--amber);">S10</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">📄 ADR — Technical viability</div>
+              <div class="pf-card-owner tag tag-amber">Engineering</div>
+            </div>
+            <div class="pf-card-desc">ADR Copilot drafts from Tech Lead conversation + isa service graph. Engineering already joined at S8 — this step takes ~1–3 days (vs. 3–4 weeks when joining at S10). Architecture decisions documented before code is written.</div>
+            <div class="pf-agents">
+              <span class="pf-agent">📄 ADR Copilot</span>
+              <span class="pf-agent">🔗 isa dependency graph</span>
+              <span class="pf-ai">55% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--amber);">S11</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">🏭 Build + Test</div>
+              <div class="pf-card-owner tag tag-amber">Engineering</div>
+            </div>
+            <div class="pf-card-desc">Code Factory + Agentic MST compresses dev/test loop from 20–60 min → ~5 min (84% auto-MST success rate). Complexity-driven, not process-driven — AI scaffolding compresses boilerplate and test generation. Target: 3–5 days vs 10–35 today.</div>
+            <div class="pf-agents">
+              <span class="pf-agent">🏭 Code Factory</span>
+              <span class="pf-agent">🔁 Agentic MST</span>
+              <span class="pf-agent">🛠 Abe CLI</span>
+              <span class="pf-ai">60% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--amber);">S13–S15</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">🎛 Cockpit setup + pre-launch checks</div>
+              <div class="pf-card-owner tag tag-amber">Engineering + Ops</div>
+            </div>
+            <div class="pf-card-desc">Cockpit Config Agent auto-populates from Blueprint: feature flags, variant setup, metric wiring. Pre-launch Checks Agent validates allocation, logging, canary. 1 day setup (vs. 3 days today).</div>
+            <div class="pf-agents">
+              <span class="pf-agent">🎛 Cockpit Config Agent</span>
+              <span class="pf-agent">✅ Pre-launch Checks Agent</span>
+              <span class="pf-ai">80% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--green);">S16–S18</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">🚀 Launch → Monitor → Extract</div>
+              <div class="pf-card-owner tag tag-green">Experiment Ops</div>
+            </div>
+            <div class="pf-card-desc">Launch: criteria-based, not approval-based. Monitor: Dashboard Agent daily digest + guardrail alerts. Run window: 15–60+ days (irreducible — statistical validity). Auto-close + dataset extraction when criteria met.</div>
+            <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Build · Experiment Dataset</div>
+            <div class="pf-agents">
+              <span class="pf-agent">📊 Dashboard Agent (daily digest)</span>
+              <span class="pf-agent">📤 Dataset Extraction Agent</span>
+              <span class="pf-ai">85% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-sep"></div>
+
+        <!-- ── PHASE 4 ── -->
+        <div class="pf-parallel" style="margin-bottom:10px;">
+          <div class="pf-parallel-label">Parallel — analysis and documentation run together</div>
+          <div class="pf-parallel-cols">
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--red);">S19</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">📊 Statistical analysis</div>
+                    <div class="pf-card-owner tag tag-teal">BA + PM</div>
+                  </div>
+                  <div class="pf-card-desc">Decision Framework Copilot auto-runs t-tests, factorial ANOVA, interaction effects. Generates decision draft with pre-agreed guardrail evaluation. BA reviews + interprets ambiguous signals. ~2 days vs. 15 today.</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">📊 Decision Framework Copilot</span>
+                    <span class="pf-agent">🔢 Databricks Genie</span>
+                    <span class="pf-ai">70% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="pf-step" style="margin-bottom:0;">
+                <div class="pf-dot" style="background:var(--red);">S21–S22</div>
+                <div class="pf-card">
+                  <div class="pf-card-top">
+                    <div class="pf-card-name">📝 Auto-doc + auto-share</div>
+                    <div class="pf-card-owner tag tag-red">Decision &amp; Obs.</div>
+                  </div>
+                  <div class="pf-card-desc">Auto-Doc Agent generates Experiment Result → Jira + Confluence. Results Presentation Agent builds audience-specific narratives: exec summary, squad deep-dive, BU impact brief. No PM copy-editing. ~1–2 days vs 10 today.</div>
+                  <div class="pf-agents">
+                    <span class="pf-agent">📝 Auto-Doc Agent</span>
+                    <span class="pf-agent">🎤 Presentation Agent</span>
+                    <span class="pf-ai">90% auto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--red);">S20</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">⚖️ Scale / Iterate / Kill decision</div>
+              <div class="pf-card-owner tag tag-blue">PM final call</div>
+            </div>
+            <div class="pf-card-desc">PM makes the final decision based on pre-agreed guardrails — not ad-hoc analysis. Criteria were set at S9 (Blueprint sign-off). Decision documented in Spec: Verdict. Rollout: criteria-based, progressive ramp for high-risk surfaces.</div>
+            <div class="pf-output"><span class="pf-output-arrow">→</span> Spec: Verdict · Decision Record</div>
+          </div>
+        </div>
+
+        <div class="pf-step">
+          <div class="pf-dot" style="background:var(--red);">S23</div>
+          <div class="pf-card">
+            <div class="pf-card-top">
+              <div class="pf-card-name">👁 Observability (continuous)</div>
+              <div class="pf-card-owner tag tag-red">Decision &amp; Obs.</div>
+            </div>
+            <div class="pf-card-desc">Daily digest by 9am. Real-time guardrail alerts. Correlates incidents to experiment variant tags. PM reviews ~1hr/day. Rollback decision if signals breach thresholds.</div>
+            <div class="pf-agents">
+              <span class="pf-agent">👁 Observability Agent</span>
+              <span class="pf-ai">95% auto</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-sep"></div>
+
+        <!-- ── LOOP ── -->
+        <div class="pf-loop">
+          <div class="pf-loop-icon">🔄</div>
+          <div>
+            <div class="pf-loop-title">Learning Loop — Verdict → Evidence (next cycle)</div>
+            <div class="pf-loop-text">The Experiment Result written to Spec: Verdict becomes the Prior Experiment Signal for the next cycle's Evidence Pack. Each well-documented experiment raises the Evidence Sufficiency Score for the next hypothesis on the same surface. Currently only ~40% of experiments are documented — the Auto-Doc Agent makes it structural, targeting 95%+.</div>
+          </div>
+        </div>
+
+      </div><!-- /pf-cards -->
+    </div><!-- /pf-layout -->
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ SECTION 3: MODULE SPECS ═══════════════════════════════ -->
+<div id="section-specs" class="section">
+  <div class="page-wrap-narrow">
+    <div class="sec-header">
+      <div class="sec-header-icon">📋</div>
+      <div class="sec-header-body">
+        <div class="sec-eyebrow">Deep Dives</div>
+        <div class="sec-title">Module <em>Specs</em></div>
+        <div class="sec-sub">Knowledge · Skills · Orchestration · Tool Inventory for all 6 modules. Each spec is grounded in actual tools and agents available at Nubank today. Select a module to explore.</div>
+      </div>
+    </div>
+
+
+
+<!-- Module selector -->
+<div class="nav-heading">Select a module</div>
+<div class="mod-selector">
+  <button class="mod-btn active" style="background:#820AD1;" onclick="switchMod('research',this)">
+    <span class="mod-btn-num">01</span>
+    <span class="mod-btn-icon">🔍</span>
+    <span class="mod-btn-label">Market &amp; User Insights</span>
+  </button>
+  <button class="mod-btn" onclick="switchMod('product',this)">
+    <span class="mod-btn-num">02</span>
+    <span class="mod-btn-icon">🧭</span>
+    <span class="mod-btn-label">Product &amp; Strategy</span>
+  </button>
+  <button class="mod-btn" onclick="switchMod('design',this)">
+    <span class="mod-btn-num">03</span>
+    <span class="mod-btn-icon">🎨</span>
+    <span class="mod-btn-label">Design &amp; Prototyping</span>
+  </button>
+  <button class="mod-btn" onclick="switchMod('ba',this)">
+    <span class="mod-btn-num">04</span>
+    <span class="mod-btn-icon">📐</span>
+    <span class="mod-btn-label">Analytics &amp; BA</span>
+  </button>
+  <button class="mod-btn" onclick="switchMod('engineering',this)">
+    <span class="mod-btn-num">05</span>
+    <span class="mod-btn-icon">⚙️</span>
+    <span class="mod-btn-label">Engineering &amp; QA</span>
+  </button>
+  <button class="mod-btn" onclick="switchMod('decision',this)">
+    <span class="mod-btn-num">06</span>
+    <span class="mod-btn-icon">📊</span>
+    <span class="mod-btn-label">Decision &amp; Observability</span>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 1: MARKET & USER INSIGHTS
+═══════════════════════════════════════════════════ -->
+<div id="mod-research" class="module active">
+  <div class="mod-header">
+    <div class="mod-label">Module 1 of 6 · Research Chapter</div>
+    <div class="mod-title">Market & User <em>Insights</em></div>
+    <div class="mod-sub">Automates evidence discovery at kickoff — produces a decision-ready Evidence Pack with an Evidence Sufficiency Score before any meeting is scheduled.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S0–S2</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current:</strong> ~4.5 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target:</strong> ~0.5 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--blue)"></span><strong>Compression:</strong> ~90%</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~30%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('r','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('r','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('r','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('r','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="r-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Required</div><div class="row-value"><div class="tag-list"><span class="tag tag-nu">Insight Brief (PM)</span><span class="tag tag-nu">BU Strategy one-pager</span><span class="tag tag-nu">Kickoff doc</span></div><div style="margin-top:8px;font-size:12px;color:var(--t2);">Must contain: initiative name, product area, geo scope (BR/MX/CO/global), core question.</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Output → Spec: Evidence section</div>
+      <div class="artifact-box"><div class="artifact-name">📄 Evidence Pack</div><div class="artifact-fields"><div class="artifact-field">Opportunity framing: what problem, for whom</div><div class="artifact-field">Existing research: BU NotebookLM repos, Glean/Confluence, Research Atoms</div><div class="artifact-field">Quantitative signals: Looker / Databricks prior experiments</div><div class="artifact-field">Market context: Bacen Rate Tracker, competitive signals</div><div class="artifact-field">Gaps identified + suggested research plan if score &lt; 0.4</div><div class="artifact-field">Evidence Sufficiency Score (0–1) — 5 dimensions, 25% Source Coverage · 25% Qual+Quant · 20% Recency · 15% Geo · 15% Prior Experiments</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🗄 Data Sources</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">40+ NotebookLM Repos</div><div class="source-type">BU qual research archives</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Glean + glean-mcp</div><div class="source-type">Org-wide knowledge search</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">Databricks SQL MCP</div><div class="source-type">Quant + behavioral data</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">Bacen Rate Tracker</div><div class="source-type">Market data · Eduarda Barreto</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">MIA (Colombia)</div><div class="source-type">Local AI search engine</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Jira / atlassian-mcp</div><div class="source-type">Prior experiment catalog</div><span class="tag tag-amber source-status">Semi-manual</span></div>
+        <div class="source-card"><div class="source-name">Research Atoms</div><div class="source-type">Atomic DB · Paulo Pupo</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">KB Guides (105+ KBs)</div><div class="source-type">Nu MCP · Christian Sousa</div><span class="tag tag-green source-status">Connected</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="r-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agents</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · Evidence Discovery Agent</div><p>Parallel search across NotebookLM repos, Glean, Databricks, Jira, KB Guides. ~2–4 hrs. Building blocks: Curie AI Researcher + Squad Gem V2 + MIA + 40+ repos.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · Insight Amplifier</div><p>Reviews draft Evidence Pack, flags weak claims / contradictions, suggests reinforcing data. Source: Miriam Matus (GBA) — WIP.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · Synthetic User Validator (optional)</div><p>Runs initiative brief against synthetic user profiles for rapid pre-validation. Sources: Synthetic Users Lending (BR/MX/CO), Synthetic Investor Persona, Squad Gem V2.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-blue">"Is this the right question?"</span><span class="tag tag-blue">Research design decisions</span><span class="tag tag-blue">Qual interpretation nuance</span><span class="tag tag-blue">Score override with rationale</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 30%</span><span>🧠 Human 70%</span></div><div class="weight-bar"><div class="weight-fill" style="width:30%;background:linear-gradient(90deg,var(--nu),var(--nu3));"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 65%</span><span>🧠 Human 35%</span></div><div class="weight-bar"><div class="weight-fill" style="width:65%;background:linear-gradient(90deg,var(--nu),var(--nu3));"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 4+</div><div class="weight-label"><span>🤖 AI 85%</span><span>🧠 Human 15%</span></div><div class="weight-bar"><div class="weight-fill" style="width:85%;background:linear-gradient(90deg,var(--nu),var(--nu3));"></div></div></div>
+    </div>
+  </div>
+
+  <div id="r-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Trigger</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Auto-trigger</div><p>Module fires automatically when PM submits Insight Brief. Validates completeness (initiative, area, geo, question) — Slack ping to PM if missing fields.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Sequence</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-nu">S0</div><div class="seq-content"><div class="seq-name">Insight Brief received</div><div class="seq-desc">Agent parses and validates. Missing fields → Slack ping to PM before proceeding.</div><span class="tag tag-nu" style="display:inline-block;margin-top:4px;font-size:10px;">Auto</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-nu">S1</div><div class="seq-content"><div class="seq-name">Parallel evidence scan</div><div class="seq-desc">All sources queried simultaneously. ~2–4 hours. Runs in parallel with Design module if UX changes expected.</div><span class="tag tag-nu" style="display:inline-block;margin-top:4px;font-size:10px;">Agent</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S2a</div><div class="seq-content"><div class="seq-name">Score computed → gate</div><div class="seq-desc">≥0.7 → publish Evidence Pack. 0.4–0.7 → flag for PM+researcher. &lt;0.4 → auto-generate research plan.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">Decision gate</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S2b</div><div class="seq-content"><div class="seq-name">Evidence Pack published to Spec</div><div class="seq-desc">Written to Spec: Evidence. Downstream modules notified. No meeting required.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">Output</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-gray">S2c</div><div class="seq-content"><div class="seq-name">Researcher async review</div><div class="seq-desc">SLA: 4 working hours. Can override score with rationale. Does not block downstream.</div><span class="tag tag-gray" style="display:inline-block;margin-top:4px;font-size:10px;">Human · async</span></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">Agent scan</div><div class="row-value">~2–4 hours</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Researcher review</div><div class="row-value">4 working hours (async)</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Full module</div><div class="row-value"><span class="tag tag-green">0.5 days target</span> vs <span class="tag tag-gray">4.5 days today</span></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Escalation</div><div class="row-value">Slack to Research Function lead if review &gt;4h. PM can proceed with score + written acknowledgment.</div></div>
+    </div>
+  </div>
+
+  <div id="r-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Curie AI Researcher</div><div class="source-type">Gemini Agent · Mariana Pessoa</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Squad Gem V2</div><div class="source-type">Cross-market insight parser · CC</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">MIA</div><div class="source-type">CO AI search · Carolina Leyva</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Research Atoms</div><div class="source-type">Atomic DB · Paulo Pupo</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Personas Generator</div><div class="source-type">Birdie profiles · Silvia Melo</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Synthetic Users (Lending)</div><div class="source-type">BR/MX/CO · Leticia Abe, Paco</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">glean-mcp plugin</div><div class="source-type">Canonical search skill · marketplace</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">Databricks Notebooks MCP</div><div class="source-type">Run+read results · G. Padilha</div><span class="tag tag-green source-status">Connected</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build / integrate</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Insight Amplifier</div><div class="source-type">GBA · Miriam Matus</div><span class="tag tag-amber source-status">In Progress</span></div>
+        <div class="source-card"><div class="source-name">Evidence Sufficiency Scorer</div><div class="source-type">5-dimension model (see score doc)</div><span class="tag tag-amber source-status">Needs validation</span></div>
+        <div class="source-card"><div class="source-name">Research Toolkit + Databricks</div><div class="source-type">Claude Code · Thamires Faria</div><span class="tag tag-amber source-status">In Progress</span></div>
+        <div class="source-card"><div class="source-name">Unified Evidence Pack template</div><div class="source-type">Standardized output format</div><span class="tag tag-red source-status">To define</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 2: PRODUCT & STRATEGY
+═══════════════════════════════════════════════════ -->
+<div id="mod-product" class="module">
+  <div class="mod-header">
+    <div class="mod-label">Module 2 of 6 · Product Chapter</div>
+    <div class="mod-title">Product & <em>Strategy</em></div>
+    <div class="mod-sub">Owns the question, the gates, and the final decision. PM is the author of the Insight Brief that triggers the entire cycle — and the judge at every go/no-go.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S0–S1 · S7–S9 · S19–S21</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current gate time:</strong> ~2–4 months (alignment)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target:</strong> ~5–7 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~20%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('p','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('p','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('p','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('p','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="p-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Kickoff</div><div class="row-value">BU strategy, market signals, leadership direction, OKRs</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Mid-cycle</div><div class="row-value">Evidence Pack + Score (from Research), Design Artifact (from Design), Feasibility signals (from Engineering)</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Post-experiment</div><div class="row-value">Experiment Dataset (from Engineering), Statistical analysis (from BA)</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Outputs → Spec: Evidence + Build + Verdict</div>
+      <div class="artifact-box"><div class="artifact-name">📄 Insight Brief</div><div class="artifact-fields"><div class="artifact-field">Initiative name, product area, geo scope</div><div class="artifact-field">Core question to be answered</div><div class="artifact-field">Linked Jira initiative + BU context</div></div></div>
+      <div class="artifact-box" style="margin-top:10px;"><div class="artifact-name">🔬 Experiment Blueprint sign-off</div><div class="artifact-fields"><div class="artifact-field">PM + BA sign-off to proceed from design to build</div><div class="artifact-field">Guardrail thresholds agreed upfront</div></div></div>
+      <div class="artifact-box" style="margin-top:10px;"><div class="artifact-name">✅ Scale / Iterate / Kill decision</div><div class="artifact-fields"><div class="artifact-field">Final decision based on Decision Framework Copilot output</div><div class="artifact-field">Rationale written to Spec: Verdict</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🎯 Decision Criteria</div>
+      <div class="row"><div class="row-label">Pre-experiment</div><div class="row-value">Evidence Score ≥ 0.7 → proceed. 0.4–0.7 → PM call. &lt;0.4 → research first. Hypothesis validated by copilot before Blueprint signed.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Post-experiment</div><div class="row-value">Pre-agreed guardrail thresholds (P50 for early test, P99 for rollout). Scale/Iterate/Kill based on statistical output — not ad-hoc analysis.</div></div>
+    </div>
+  </div>
+
+  <div id="p-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agent Capabilities</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · AI Agent Panels (Matheus Morgado)</div><p>6 AI personas (GM, PM, Designer, BA, Compliance, Eng) independently debate a product question → synthesize recommendation in 10 minutes. Tested on Token Listing, Token Naming. Ideal pre-S0 stress test before committing to a full cycle.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · PM Ecosystem (Diego Lissoni)</div><p>Research Assistant + Product Documentation Assistant + Deck/Prototyping flows + Work & Coordination agents. Generates PRDs/RFCs, turns studies into "what we know / don't know." Pattern reference for S0–S1 copilot.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · Hypothesis Validation Copilot</div><p>Proposes hypothesis + success metrics from Evidence Pack. Checks prior experiments for similar hypotheses. Enforces guardrail threshold selection before Blueprint is signed.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-blue">Strategic framing ("is this the right bet?")</span><span class="tag tag-blue">Stakeholder negotiation</span><span class="tag tag-blue">Risk tolerance decisions</span><span class="tag tag-blue">Scale / Kill final call</span><span class="tag tag-blue">Prioritization across initiatives</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 20%</span><span>🧠 Human 80%</span></div><div class="weight-bar"><div class="weight-fill" style="width:20%;background:linear-gradient(90deg,var(--blue),#818CF8);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 50%</span><span>🧠 Human 50%</span></div><div class="weight-bar"><div class="weight-fill" style="width:50%;background:linear-gradient(90deg,var(--blue),#818CF8);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 4+</div><div class="weight-label"><span>🤖 AI 65%</span><span>🧠 Human 35%</span></div><div class="weight-bar"><div class="weight-fill" style="width:65%;background:linear-gradient(90deg,var(--blue),#818CF8);"></div></div></div>
+      <div style="font-size:12px;color:var(--t2);margin-top:10px;">Strategic judgment stays human. Documentation, alignment coordination, and metrics scaffolding migrate to agents.</div>
+    </div>
+  </div>
+
+  <div id="p-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Triggers</div>
+      <div class="row"><div class="row-label">S0–S1</div><div class="row-value">PM initiative — no automatic trigger. PM authors the Insight Brief which fires all other modules.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">S7–S9</div><div class="row-value">Triggered when Evidence Pack (score ≥ 0.4) + Design Artifact are both available in the Spec.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">S19–S21</div><div class="row-value">Triggered when Experiment Dataset is extracted (S18 complete).</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Gate Responsibilities</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-blue">G1</div><div class="seq-content"><div class="seq-name">Insight Brief quality gate</div><div class="seq-desc">PM reviews and validates that the brief has enough context before the cycle starts. Incomplete brief → Orchestrator pings PM.</div></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-blue">G2</div><div class="seq-content"><div class="seq-name">Evidence sufficiency gate</div><div class="seq-desc">PM reviews score. 0.4–0.7 zone: PM decides whether to proceed or commission targeted research. Override requires written rationale.</div></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-blue">G3</div><div class="seq-content"><div class="seq-name">Blueprint sign-off gate</div><div class="seq-desc">PM + BA sign Experiment Blueprint before code is written. Engineering joins no later than S8 to prevent "Pix Financing pattern."</div></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-blue">G4</div><div class="seq-content"><div class="seq-name">Scale / Kill decision gate</div><div class="seq-desc">PM makes final decision based on pre-agreed guardrails. Not ad-hoc — criteria set at G3 time. Decision documented in Spec: Verdict.</div></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">Insight Brief</div><div class="row-value">PM submits within 1 day of initiative approval</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Evidence gate review</div><div class="row-value">4 working hours after Evidence Pack published</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Blueprint sign-off</div><div class="row-value">1 day after Blueprint draft complete</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Post-experiment decision</div><div class="row-value">3 days analysis + 1 day decision (vs. 15 days today)</div></div>
+    </div>
+  </div>
+
+  <div id="p-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">AI Agent Panels</div><div class="source-type">6-persona debate · Matheus Morgado · Crypto</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">PM Ecosystem (Diego Lissoni)</div><div class="source-type">Research + PRD + Coordination agents</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">atlassian-mcp</div><div class="source-type">Jira + Confluence direct access</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">Knowledge Graph plugin</div><div class="source-type">Spec introspection view · marketplace</div><span class="tag tag-green source-status">Ready</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Hypothesis Validation Copilot</div><div class="source-type">Propose + validate hypothesis from Evidence Pack</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Insight Brief template / validator</div><div class="source-type">Structured form with completeness check</div><span class="tag tag-red source-status">To define</span></div>
+        <div class="source-card"><div class="source-name">Stakeholder Alignment Agent</div><div class="source-type">Parallelizes multi-geo review (vs. sequential)</div><span class="tag tag-red source-status">To build</span></div>
+      </div>
+    </div>
+    <div class="open-q"><div class="open-q-title">Open question</div><div class="open-q-text">The sprint plan marks Global Stakeholder Alignment as the single biggest lever — currently 3+ months sequential, target 5–7 days parallel. The Global Alignment Agent needs to be scoped separately as a Specific module for multi-geo initiatives.</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 3: DESIGN & PROTOTYPING
+═══════════════════════════════════════════════════ -->
+<div id="mod-design" class="module">
+  <div class="mod-header">
+    <div class="mod-label">Module 3 of 6 · Design Chapter</div>
+    <div class="mod-title">Design & <em>Prototyping</em></div>
+    <div class="mod-sub">Translates evidence into validated, NuDS-compliant prototypes. Starts in parallel with the evidence scan — low-fi first, hi-fi only after PM + Designer sign-off on variants.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S5–S6</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current:</strong> 2–20 days (complexity-driven)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target:</strong> 2–5 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~30%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('d','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('d','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('d','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('d','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="d-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Required</div><div class="row-value"><div class="tag-list"><span class="tag tag-nu">Insight Brief (triggers parallel start)</span><span class="tag tag-nu">NuDS component library</span></div></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Enriches hi-fi</div><div class="row-value"><div class="tag-list"><span class="tag tag-gray">Evidence Pack (when available)</span><span class="tag tag-gray">Prior Figma explorations</span><span class="tag tag-gray">Customer feedback from Birdie</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Output → Spec: Intent section</div>
+      <div class="artifact-box"><div class="artifact-name">🎨 Design Artifact</div><div class="artifact-fields"><div class="artifact-field">Low-fi concepts (validated before hi-fi investment)</div><div class="artifact-field">Hi-fi Figma prototypes, NuDS-compliant</div><div class="artifact-field">design.md — variant set, component mapping, design decisions</div><div class="artifact-field">NuDS compliance check report</div><div class="artifact-field">Variant minimization flag (if variants differ only in sequencing, not structure)</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🎯 Decision Criteria</div>
+      <div class="row"><div class="row-label">Low-fi gate</div><div class="row-value">PM + Designer agree on variant set before any hi-fi investment. Prevents "Data Catalog pattern" (20 days hi-fi, 15 days wait, rejected).</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">NuDS compliance</div><div class="row-value">NuDS Mapper / UX Excellence Score must pass before artifact is published to Spec. Non-compliant elements flagged automatically.</div></div>
+    </div>
+  </div>
+
+  <div id="d-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agent Capabilities</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · Design Copilot</div><p>Suggests NuDS components from hypothesis, generates low-fi frames, flags non-compliant elements. Source: Cursor + Figma MCP + NuDS documentation skills (Thais Valotto + Juan Perez).</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · Curie + Oppenheimer (Squad Gem)</div><p>Curie diagnoses the problem space; Oppenheimer visualizes the solution in NuDS. Combined via Squad Gem: Diagnose → Visualize → Critique → Refine. Used by CC Core, Magic App teams.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · QA & Visual Fidelity Agents</div><p>Confere (Claude Artifact): Figma vs. implementation visual fidelity score. NuDS Mapper: component compliance. UX Excellence Score: heuristics + design principles. Automated before manual QA.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 4 · Figma-to-Code</div><p>Valentina Barreto (GBA-CO): Claude Skill reads Figma frame → generates React Native with NuDS tokens → automated visual QA until 100% fidelity. Ready to use.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-green">Experience design judgment</span><span class="tag tag-green">Mental model framing</span><span class="tag tag-green">Aesthetic + usability decisions</span><span class="tag tag-green">Variant selection</span><span class="tag tag-green">Emotional resonance evaluation</span></div><div style="margin-top:8px;font-size:12px;color:var(--t2);">Design remains deeply human. AI accelerates production and compliance checks, not conception.</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 30%</span><span>🧠 Human 70%</span></div><div class="weight-bar"><div class="weight-fill" style="width:30%;background:linear-gradient(90deg,var(--green),#34D399);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 50%</span><span>🧠 Human 50%</span></div><div class="weight-bar"><div class="weight-fill" style="width:50%;background:linear-gradient(90deg,var(--green),#34D399);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 4+</div><div class="weight-label"><span>🤖 AI 65%</span><span>🧠 Human 35%</span></div><div class="weight-bar"><div class="weight-fill" style="width:65%;background:linear-gradient(90deg,var(--green),#34D399);"></div></div></div>
+    </div>
+  </div>
+
+  <div id="d-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Trigger</div>
+      <div class="row"><div class="row-label">Start</div><div class="row-value">Insight Brief published — runs in PARALLEL with Market & User Insights module. Designer starts low-fi exploration while researcher scans evidence.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Hi-fi phase</div><div class="row-value">Only after PM + Designer agree on variant set at low-fi gate. Not time-based — quality-gated.</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Sequence</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S5a</div><div class="seq-content"><div class="seq-name">Low-fi exploration</div><div class="seq-desc">Design Copilot generates initial concepts. Designer refines. Runs parallel with evidence scan.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">~2 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">G</div><div class="seq-content"><div class="seq-name">Variant set gate</div><div class="seq-desc">PM + Designer review low-fi. Agree on which variants to build hi-fi. Gate prevents wasted hi-fi investment.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">Go/no-go</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S5b</div><div class="seq-content"><div class="seq-name">Hi-fi + NuDS compliance</div><div class="seq-desc">Hi-fi prototypes built. NuDS Mapper + UX Excellence Score run automatically. Non-compliant flags resolved.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">~3 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S6</div><div class="seq-content"><div class="seq-name">Design Artifact published to Spec</div><div class="seq-desc">design.md written to Spec: Intent. BA + Engineering notified. No meeting required — artifact is self-contained.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">Output</span></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">Low-fi concepts</div><div class="row-value">2 days from Insight Brief</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Hi-fi (if needed)</div><div class="row-value">3 additional days after variant gate</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Full module</div><div class="row-value"><span class="tag tag-green">2–5 days target</span> (runs in parallel — net delay = 0)</div></div>
+    </div>
+  </div>
+
+  <div id="d-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Figma-to-code (Claude Skill)</div><div class="source-type">React Native + NuDS · Valentina Barreto</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">NuDS + Core Docs Skills</div><div class="source-type">Thais Valotto + Juan Perez · Testing</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">Design Playground</div><div class="source-type">NuDS Web prototyping · Mario Souto</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Builder Toolkit</div><div class="source-type">/toolkit-build routing · Rafael Ribeiro</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Confere (QA)</div><div class="source-type">Figma vs impl fidelity · Thalyta Pereira</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">NuDS Mapper</div><div class="source-type">Component compliance · Amanda Shitara</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">UX Excellence Score</div><div class="source-type">Heuristics + principles · Victor Garcia</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">figma-design-audit</div><div class="source-type">Pre-handoff consistency · Pedro Pim</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Squad Gem V2</div><div class="source-type">Curie+Oppenheimer · Mariana Pessoa</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">Single Artifact Workflow</div><div class="source-type">Replaces PRD+Figma · Mario Souto PJ</div><span class="tag tag-amber source-status">WIP</span></div>
+        <div class="source-card"><div class="source-name">Lending States Skill</div><div class="source-type">8+ lending states · Carolina Perrone</div><span class="tag tag-amber source-status">Testing</span></div>
+        <div class="source-card"><div class="source-name">QA em staging (Claude)</div><div class="source-type">Test scenario generation · Thaís Cassimiro</div><span class="tag tag-amber source-status">WIP</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Design Copilot (module-level)</div><div class="source-type">Unified low-fi → NuDS generation flow</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Variant Gate workflow</div><div class="source-type">Structured PM+Designer sign-off step</div><span class="tag tag-red source-status">To define</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 4: ANALYTICS & BA
+═══════════════════════════════════════════════════ -->
+<div id="mod-ba" class="module">
+  <div class="mod-header">
+    <div class="mod-label">Module 4 of 6 · BA / Analytics Chapter</div>
+    <div class="mod-title">Analytics & <em>BA</em></div>
+    <div class="mod-sub">Structures the experiment — hypothesis, metrics, guardrails, sample sizes — and closes the loop with statistical analysis post-experiment. The module that makes "how to test" automatable.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S7–S9 · S19</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current:</strong> 4–8 weeks (experiment plan)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target:</strong> 3–5 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~30%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('b','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('b','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('b','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('b','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="b-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Blueprint phase</div><div class="row-value"><div class="tag-list"><span class="tag tag-nu">Evidence Pack + Score</span><span class="tag tag-nu">Design Artifact</span><span class="tag tag-nu">Feasibility signals from Engineering</span></div></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Analysis phase</div><div class="row-value"><div class="tag-list"><span class="tag tag-gray">Experiment Dataset (from Eng/Ops)</span><span class="tag tag-gray">Experiment Blueprint (for context)</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Outputs → Spec: Build + Verdict</div>
+      <div class="artifact-box"><div class="artifact-name">🔬 Experiment Blueprint</div><div class="artifact-fields"><div class="artifact-field">Hypothesis: If [action], then [metric] will change by [X] because [evidence]</div><div class="artifact-field">Primary metric + secondary metrics + guardrails</div><div class="artifact-field">Sample size + statistical power + minimum detectable effect</div><div class="artifact-field">Feasibility assessment + dependency scan</div><div class="artifact-field">Pre-agreed Scale/Kill thresholds (P50 for concept, P99 for rollout)</div></div></div>
+      <div class="artifact-box" style="margin-top:10px;"><div class="artifact-name">📊 Statistical Analysis</div><div class="artifact-fields"><div class="artifact-field">Auto-run statistical tests (t-test, ANOVA for factorial designs)</div><div class="artifact-field">Decision Framework draft with guardrail evaluation</div><div class="artifact-field">Interaction effects for multi-variant experiments</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🗄 Data Sources</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Databricks SQL MCP</div><div class="source-type">Primary analytics backend</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">Databricks Genie</div><div class="source-type">NL query · Lucca Cruz · Ops BR</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Cockpit</div><div class="source-type">Experiment platform + metrics</div><span class="tag tag-amber source-status">Manual setup</span></div>
+        <div class="source-card"><div class="source-name">Prior experiment catalog</div><div class="source-type">Jira / atlassian-mcp</div><span class="tag tag-amber source-status">Semi-manual</span></div>
+        <div class="source-card"><div class="source-name">Statistical tables</div><div class="source-type">Sample size calculators</div><span class="tag tag-green source-status">Encodeable</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="b-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agent Capabilities</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · Experiment Plan Copilot</div><p>Auto-generates hypothesis + metrics + sample size from Evidence Pack + Design Artifact. Calculates cell-level sample sizes for factorial designs (where combinatorial complexity makes manual calculation extremely slow). Reference: Pix Financing pricing experiment with 11 variants.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · Feasibility Checklist Agent</div><p>Auto-scans prior ADRs and dependency graphs to pre-populate feasibility fields in the Blueprint. Runs in parallel with hypothesis validation (S7+S8 parallel). Source: Julien Malige's nu-agent-factory pattern + isa plugin (service/owner/dependency graph).</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · Decision Framework Copilot</div><p>Post-experiment: auto-runs statistical tests (t-test, factorial ANOVA, interaction effects), generates decision framework draft with guardrail evaluation. Reference: Lucca Cruz's Databricks Genie — 500+ daily queries, 4.5h/week → 5 min.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-teal">Risk tolerance decisions</span><span class="tag tag-teal">Guardrail threshold negotiation</span><span class="tag tag-teal">Interpreting ambiguous results</span><span class="tag tag-teal">Factorial design choices</span></div><div style="margin-top:8px;font-size:12px;color:var(--t2);">"What to test" stays human. "How to structure the test" migrates to agents.</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 30%</span><span>🧠 Human 70%</span></div><div class="weight-bar"><div class="weight-fill" style="width:30%;background:linear-gradient(90deg,var(--teal),#22D3EE);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 65%</span><span>🧠 Human 35%</span></div><div class="weight-bar"><div class="weight-fill" style="width:65%;background:linear-gradient(90deg,var(--teal),#22D3EE);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 4+</div><div class="weight-label"><span>🤖 AI 80%</span><span>🧠 Human 20%</span></div><div class="weight-bar"><div class="weight-fill" style="width:80%;background:linear-gradient(90deg,var(--teal),#22D3EE);"></div></div></div>
+    </div>
+  </div>
+
+  <div id="b-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Trigger</div>
+      <div class="row"><div class="row-label">Blueprint phase</div><div class="row-value">Evidence Pack (score ≥ 0.4) + Design Artifact both available in Spec.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Analysis phase</div><div class="row-value">Experiment Dataset extracted (S18 complete).</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Sequence</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-teal" style="background:var(--teal);">S7</div><div class="seq-content"><div class="seq-name">Hypothesis validation</div><div class="seq-desc">Copilot proposes hypothesis + metrics from Evidence Pack. BA refines. Runs in parallel with S8.</div><span class="tag tag-teal" style="display:inline-block;margin-top:4px;font-size:10px;">~1–2 days · parallel</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-teal" style="background:var(--teal);">S8</div><div class="seq-content"><div class="seq-name">Feasibility + dependency scan</div><div class="seq-desc">Feasibility Agent auto-populates from architecture graph. Engineering joins here — not at S10. Runs in parallel with S7.</div><span class="tag tag-teal" style="display:inline-block;margin-top:4px;font-size:10px;">~1–2 days · parallel</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-teal" style="background:var(--teal);">S9</div><div class="seq-content"><div class="seq-name">Experiment Blueprint</div><div class="seq-desc">Synthesizes S7+S8 into single Blueprint artifact. Sample sizes, guardrails, variant definitions. PM + BA sign-off required.</div><span class="tag tag-teal" style="display:inline-block;margin-top:4px;font-size:10px;">~1 day</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-teal" style="background:var(--teal);">S19</div><div class="seq-content"><div class="seq-name">Statistical analysis</div><div class="seq-desc">Post-experiment: Decision Framework Copilot auto-runs tests + generates decision draft. BA reviews + interprets ambiguous signals.</div><span class="tag tag-teal" style="display:inline-block;margin-top:4px;font-size:10px;">~2 days vs 15 today</span></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">Blueprint full cycle</div><div class="row-value"><span class="tag tag-green">3–5 days target</span> vs <span class="tag tag-gray">4–8 weeks today</span></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Post-experiment analysis</div><div class="row-value"><span class="tag tag-green">2 days target</span> vs <span class="tag tag-gray">15 days today (complex)</span></div></div>
+    </div>
+  </div>
+
+  <div id="b-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Databricks Genie</div><div class="source-type">NL analytics · Lucca Cruz · Ops BR</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Databricks Notebooks MCP</div><div class="source-type">Run+iterate code · G. Padilha</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">pj-cc-ds plugin</div><div class="source-type">PJ CC validated metrics · Nathali R.</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">nuviagens-analyst</div><div class="source-type">Travel BA natural language · Malu C.</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">isa plugin</div><div class="source-type">Service/owner/dependency graph</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">AI Prediction Model</div><div class="source-type">A/B prediction · Joelle Alfassi · GAP</div><span class="tag tag-amber source-status">WIP</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Experiment Plan Copilot</div><div class="source-type">Auto-generates hypothesis + sample size</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Feasibility Checklist Agent</div><div class="source-type">Auto-scans ADRs + dependency graph</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Decision Framework Copilot</div><div class="source-type">Auto-runs statistical tests post-experiment</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Cockpit Config Agent</div><div class="source-type">Auto-populates from Blueprint</div><span class="tag tag-red source-status">To build</span></div>
+      </div>
+    </div>
+    <div class="open-q"><div class="open-q-title">Key open question (from sprint plan)</div><div class="open-q-text">Databricks integration fragmentation: Juliano Garcia identified 5+ different approaches to Databricks + AI at Nubank. Need to align on one canonical integration approach before building the Experiment Plan Agent's metrics computation.</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 5: ENGINEERING & QA
+═══════════════════════════════════════════════════ -->
+<div id="mod-engineering" class="module">
+  <div class="mod-header">
+    <div class="mod-label">Module 5 of 6 · Engineering Chapter</div>
+    <div class="mod-title">Engineering <em>& QA</em></div>
+    <div class="mod-sub">Builds, validates, launches and runs the experiment. The highest-variance module — complexity ranges from 2 days (Open Finance redirect) to 4 months (GBA Dashboard). AI agents compress the scaffolding; architecture judgment stays human.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S10–S18</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current dev:</strong> 5–35 days (complexity-driven)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target dev:</strong> 3–5 days (AI-native)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~35%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('e','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('e','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('e','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('e','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="e-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Required</div><div class="row-value"><div class="tag-list"><span class="tag tag-nu">Experiment Blueprint (PM+BA signed)</span><span class="tag tag-nu">Design Artifact (Figma + design.md)</span></div></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Context</div><div class="row-value"><div class="tag-list"><span class="tag tag-gray">ADR repository</span><span class="tag tag-gray">Service ownership graph (isa)</span><span class="tag tag-gray">CI/CD pipelines</span><span class="tag tag-gray">NuDS component registry</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Outputs → Spec: Build section</div>
+      <div class="artifact-box"><div class="artifact-name">⚙️ Ready-for-Experiment Status</div><div class="artifact-fields"><div class="artifact-field">ADR — architecture decisions documented</div><div class="artifact-field">Production code — PR-ready, tested, reviewed</div><div class="artifact-field">Cockpit config — feature flags, variant setup, metric wiring</div><div class="artifact-field">Pre-launch validation passed (allocation, logging, canary)</div><div class="artifact-field">Experiment Dataset — live results during run window</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🎯 Critical Principle</div>
+      <div class="val-note"><div class="val-note-title">Engineering joins at S8 (Feasibility), not S10 (Build)</div><div class="val-note-text">The sprint plan's 5 Whys analysis shows the "Pix Financing pattern": when engineering joins late (S10), the ADR step balloons to 3–4 weeks as late discovery cascades. When engineering joins early (CC Autopay pattern, S8), the ADR takes 3 days. This is an Orchestration fix, not a skill fix.</div></div>
+    </div>
+  </div>
+
+  <div id="e-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agent Capabilities</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · Code Factory (Pedro Camargo)</div><p>Multi-model agents turn feature ideas into PR-ready code. Multi-agent consensus: Architecture, Domain, Security, QA, Adversarial roles. Already in production. Sprint plan validation: Code generation migrates fast.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · Agentic MST + LME (Alex Warr)</div><p>Claude Agentic Development Workflow. Dev/test loop compressed from 20–60 min → ~5 min. 84% auto-MST creation success rate. Downstream connection point when our workflow produces experiment requests faster.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · Abe CLI (Eduardo Sotomayor)</div><p>Collapses CI/CD debugging from fragmented multi-step flow to single step. Headless by design — integrates into AI-native development loops.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 4 · ADR Copilot</div><p>Drafts ADR from Tech Lead conversation, pre-populates from service ownership graph (isa plugin). Reduces S10 from 5 days to ~1 day for well-understood domains.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 5 · Automated Regression + Cockpit Config</div><p>Visual/interaction checks on pre-staged environment. Cockpit Config Agent auto-populates from Experiment Blueprint — Cockpit parameters, feature flags, metric wiring. 1 day setup vs. 3 days today.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-amber">Architecture decisions</span><span class="tag tag-amber">Code review judgment</span><span class="tag tag-amber">Edge case handling</span><span class="tag tag-amber">Launch decision (criteria-based)</span><span class="tag tag-amber">Anomaly interpretation</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 35%</span><span>🧠 Human 65%</span></div><div class="weight-bar"><div class="weight-fill" style="width:35%;background:linear-gradient(90deg,var(--amber),#FCD34D);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 60%</span><span>🧠 Human 40%</span></div><div class="weight-bar"><div class="weight-fill" style="width:60%;background:linear-gradient(90deg,var(--amber),#FCD34D);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Experiment Ops (S13–S18)</div><div class="weight-label"><span>🤖 AI 70–90%</span><span>🧠 Human 10–30%</span></div><div class="weight-bar"><div class="weight-fill" style="width:80%;background:linear-gradient(90deg,var(--amber),#FCD34D);"></div></div></div>
+      <div style="font-size:12px;color:var(--t2);margin-top:8px;">Experiment Ops (S13–S18) is the highest-automation phase. Setup, monitoring, and dataset extraction become mostly mechanical. Run windows remain irreducible (15–60 days for statistical validity).</div>
+    </div>
+  </div>
+
+  <div id="e-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Trigger</div>
+      <div class="row"><div class="row-label">Hard gate</div><div class="row-value">Experiment Blueprint signed by PM + BA. All Specific module approvals cleared (Credit Risk Forum, NP&F Gate if applicable). No code written before Blueprint sign-off.</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Sequence</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S10</div><div class="seq-content"><div class="seq-name">Technical viability / ADR</div><div class="seq-desc">ADR Copilot drafts from Tech Lead conversation + isa service graph. Engineering joined at S8 — this step is fast if that pattern was followed.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">~1–3 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S11</div><div class="seq-content"><div class="seq-name">Build + test</div><div class="seq-desc">Code Factory + Agentic MST + Cursor. Complexity-driven — not process-driven. Backend complexity is real; AI scaffolding compresses boilerplate and test generation.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">3–20 days (varies)</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S12</div><div class="seq-content"><div class="seq-name">Solution approval</div><div class="seq-desc">Automated regression on pre-staged env. Parallel reviewer sign-off (not sequential). 2 days vs. 10 days for multi-BU approvals.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">~2 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S13–S15</div><div class="seq-content"><div class="seq-name">Cockpit setup + pre-launch checks</div><div class="seq-desc">Cockpit Config Agent auto-populates from Blueprint. Pre-launch Checks Agent validates allocation + logging + canary. 1 day setup.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">~1 day (automated)</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S16–S18</div><div class="seq-content"><div class="seq-name">Launch → Monitor → Extract</div><div class="seq-desc">Launch: criteria-based, not approval-based. Monitor: Dashboard Agent daily digest + guardrail alerts. Extract: auto-close + dataset extraction when criteria met.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">Run window: 15–60+ days (irreducible)</span></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">ADR (S10)</div><div class="row-value">3 days baseline. Prevents ballooning via early eng involvement at S8.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Build (S11)</div><div class="row-value">Complexity-driven. Target: 3–5 days AI-native vs. 10–35 days today.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Cockpit setup (S13–S15)</div><div class="row-value"><span class="tag tag-green">1 day (automated)</span> vs <span class="tag tag-gray">3 days today</span></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Run window (S17)</div><div class="row-value">Irreducible — 15 days (low-risk) to 60+ days (credit, ≥1 billing cycle). Focus on monitoring quality, not window reduction.</div></div>
+    </div>
+  </div>
+
+  <div id="e-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Code Factory</div><div class="source-type">Multi-agent PR-ready code · Pedro Camargo</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Agentic MST + LME v0</div><div class="source-type">Dev/test loop 5min · Alex Warr</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Abe CLI</div><div class="source-type">CI/CD debugging · Eduardo Sotomayor</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">isa plugin</div><div class="source-type">Service/owner/dependency graph</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">nu-agent-factory</div><div class="source-type">Server-side agent runtime · Julien Malige</div><span class="tag tag-green source-status">RFC/PoC</span></div>
+        <div class="source-card"><div class="source-name">crystallize-static</div><div class="source-type">StaticOp creation &lt;15min · Victor Tavares</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">feature-discovery</div><div class="source-type">Cross-team discovery extension · Rafael C.</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">provider-api-assessment</div><div class="source-type">External API → Nubank assessment · Ken M.</div><span class="tag tag-green source-status">Ready</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">ADR Copilot</div><div class="source-type">Draft from Tech Lead conversation</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Cockpit Config Agent</div><div class="source-type">Auto-populate from Blueprint</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Pre-launch Checks Agent</div><div class="source-type">Validate allocation + logging + canary</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Dataset Extraction Agent</div><div class="source-type">Auto-close + extract when criteria met</div><span class="tag tag-red source-status">To build</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODULE 6: DECISION & OBSERVABILITY
+═══════════════════════════════════════════════════ -->
+<div id="mod-decision" class="module">
+  <div class="mod-header">
+    <div class="mod-label">Module 6 of 6 · Cross-chapter</div>
+    <div class="mod-title">Decision & <em>Observability</em></div>
+    <div class="mod-sub">Closes the loop — auto-analyzes results, generates the Scale/Kill decision framework, auto-documents, and feeds learnings back into Evidence for the next cycle. Currently only ~40% of experiments get documented; this module makes it structural.</div>
+    <div class="meta-strip">
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Steps:</strong> S19–S23</div>
+      <div class="meta-pill"><span class="meta-dot"></span><strong>Current:</strong> 15–25 days (analysis + sharing)</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--green)"></span><strong>Target:</strong> 5–7 days</div>
+      <div class="meta-pill"><span class="meta-dot" style="background:var(--amber)"></span><strong>AI weight today:</strong> ~40%</div>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('dec','knowledge',this)">📚 Knowledge</button>
+    <button class="tab-btn" onclick="switchTab('dec','skills',this)">⚡ Skills</button>
+    <button class="tab-btn" onclick="switchTab('dec','orchestration',this)">🔀 Orchestration</button>
+    <button class="tab-btn" onclick="switchTab('dec','tools',this)">🛠 Tool Inventory</button>
+  </div>
+
+  <div id="dec-knowledge" class="tab-panel active">
+    <div class="section-card">
+      <div class="section-title">📥 Inputs</div>
+      <div class="row"><div class="row-label">Required</div><div class="row-value"><div class="tag-list"><span class="tag tag-nu">Experiment Dataset (from Eng/Ops)</span><span class="tag tag-nu">Experiment Blueprint (for context)</span><span class="tag tag-nu">Statistical Analysis (from BA)</span></div></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Post-rollout</div><div class="row-value"><div class="tag-list"><span class="tag tag-gray">App performance metrics</span><span class="tag tag-gray">Incident tracker</span><span class="tag tag-gray">User sentiment signals</span></div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📤 Outputs → Spec: Verdict section (+ loop back to Evidence)</div>
+      <div class="artifact-box"><div class="artifact-name">✅ Experiment Result Artifact</div><div class="artifact-fields"><div class="artifact-field">Hypothesis — what was tested</div><div class="artifact-field">Result — statistical outcome against pre-agreed guardrails</div><div class="artifact-field">Decision — Scale / Iterate / Kill with rationale</div><div class="artifact-field">Learnings — what this tells us about users/product/market</div><div class="artifact-field">Auto-synced to Jira + Confluence (no manual entry)</div></div></div>
+      <div class="artifact-box" style="margin-top:10px;"><div class="artifact-name">📬 Audience-specific narratives (auto-generated)</div><div class="artifact-fields"><div class="artifact-field">Exec summary (1 page)</div><div class="artifact-field">Squad deep-dive (full statistical breakdown)</div><div class="artifact-field">BU impact brief (cross-BU implications)</div></div></div>
+      <div class="artifact-box" style="margin-top:10px;"><div class="artifact-name">📡 Daily Observability Digest (post-rollout)</div><div class="artifact-fields"><div class="artifact-field">Anomalies, performance trends, incident correlations</div><div class="artifact-field">Experiment variant tags correlated to incidents</div><div class="artifact-field">Delivered by 9am daily · Critical alerts: real-time</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔁 The Learning Loop</div>
+      <div class="row"><div class="row-label">Why this matters</div><div class="row-value">The Verdict section of the Spec becomes prior experiment signal for the next cycle's Evidence Pack. Each well-documented experiment raises the Evidence Sufficiency Score for the next hypothesis on the same surface. Currently broken — only ~40% of experiments documented. This module fixes it structurally.</div></div>
+    </div>
+  </div>
+
+  <div id="dec-skills" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">🤖 AI Agent Capabilities</div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 1 · Decision Framework Copilot</div><p>Auto-runs statistical tests (t-test, factorial ANOVA, interaction effects), generates decision framework draft with pre-agreed guardrail evaluation and visualizations. Compresses S19 from 15 days → 2 days. Human reviews + makes final call.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 2 · Auto-Documentation Agent</div><p>Creates Experiment Result artifact automatically from structured data — no PM copy-editing. Auto-syncs to Jira + Confluence + wiki. Raises documentation completion from ~40% → ~95%. Key to closing the learning loop.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 3 · Results Presentation Agent</div><p>Builds audience-specific narratives from the Experiment Result artifact: exec summary, squad deep-dive, BU impact brief. Compresses S22 from 10 days (GBA Dashboard sequential stakeholder tour) → 2 days.</p></div>
+      <div class="ai-brief"><div class="ai-brief-label"><span class="pulse"></span>Agent 4 · Observability Agent (S23)</div><p>Consolidates signals across app performance, incidents, and user sentiment. Produces daily digest by 9am. Real-time alerts on guardrail breach. Correlates incidents to experiment variant tags. 80% AI / 20% Human → target 95% AI.</p></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🧠 Human Skills (durable)</div>
+      <div class="row"><div class="row-label">Stays human</div><div class="row-value"><div class="tag-list"><span class="tag tag-red">Final Scale/Iterate/Kill judgment</span><span class="tag tag-red">Ambiguous result interpretation</span><span class="tag tag-red">Strategic implication framing</span><span class="tag tag-red">Rollback decision (incidents)</span></div><div style="margin-top:8px;font-size:12px;color:var(--t2);">The clearest example: GBA Dashboard where Caixinhas went up but Investments went down. No agent resolves that trade-off — it requires portfolio-level judgment.</div></div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">📊 Skill Migration</div>
+      <div class="weight-row"><div class="weight-subtitle">Today</div><div class="weight-label"><span>🤖 AI 40%</span><span>🧠 Human 60%</span></div><div class="weight-bar"><div class="weight-fill" style="width:40%;background:linear-gradient(90deg,var(--red),#F87171);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Phase 3 — 6 months</div><div class="weight-label"><span>🤖 AI 75%</span><span>🧠 Human 25%</span></div><div class="weight-bar"><div class="weight-fill" style="width:75%;background:linear-gradient(90deg,var(--red),#F87171);"></div></div></div>
+      <div class="weight-row"><div class="weight-subtitle">Observability (S23)</div><div class="weight-label"><span>🤖 AI 95%</span><span>🧠 Human 5%</span></div><div class="weight-bar"><div class="weight-fill" style="width:95%;background:linear-gradient(90deg,var(--red),#F87171);"></div></div></div>
+    </div>
+  </div>
+
+  <div id="dec-orchestration" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">⚡ Trigger</div>
+      <div class="row"><div class="row-label">S19</div><div class="row-value">Experiment Dataset extracted (S18 complete). Automatic — no human activation needed.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">S23</div><div class="row-value">Rollout confirmed (S20 complete). Continuous thereafter.</div></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔀 Sequence</div>
+      <div class="seq-flow">
+        <div class="seq-step"><div class="seq-dot seq-dot-red">S19</div><div class="seq-content"><div class="seq-name">Analyze + decision framework</div><div class="seq-desc">Decision Framework Copilot auto-runs tests. BA + PM review draft. Final Scale/Kill call by PM. ~2–4 days vs. 15 days today.</div><span class="tag tag-red" style="display:inline-block;margin-top:4px;font-size:10px;">~2–4 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-amber">S20</div><div class="seq-content"><div class="seq-name">Rollout / rollback</div><div class="seq-desc">Pre-staged rollout options. Cockpit API + automated cleanup. Progressive ramp for high-risk surfaces.</div><span class="tag tag-amber" style="display:inline-block;margin-top:4px;font-size:10px;">~1–2 days</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-red">S21+S22</div><div class="seq-content"><div class="seq-name">Auto-document + auto-share (parallel)</div><div class="seq-desc">Auto-Doc Agent generates Experiment Result → Jira + Confluence. Results Presentation Agent generates audience narratives → auto-distributed. No PM copy-editing required.</div><span class="tag tag-red" style="display:inline-block;margin-top:4px;font-size:10px;">~1–2 days (parallel)</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-green">S23</div><div class="seq-content"><div class="seq-name">Observability (continuous)</div><div class="seq-desc">Daily digest by 9am. Real-time guardrail alerts. PM reviews ~1hr/day. Rollback decision if signals breach thresholds.</div><span class="tag tag-green" style="display:inline-block;margin-top:4px;font-size:10px;">Ongoing · automated</span></div></div>
+        <div class="seq-step"><div class="seq-dot seq-dot-nu">↺</div><div class="seq-content"><div class="seq-name">Loop back to Evidence</div><div class="seq-desc">Experiment Result written to Spec: Verdict → feeds Spec: Evidence section in next cycle. Prior experiment signal score improves automatically over time.</div><span class="tag tag-nu" style="display:inline-block;margin-top:4px;font-size:10px;">Learning loop</span></div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">⏱ SLAs</div>
+      <div class="row"><div class="row-label">Full S19–S22</div><div class="row-value"><span class="tag tag-green">5–7 days target</span> vs <span class="tag tag-gray">15–25 days today</span></div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Observability digest</div><div class="row-value">9am daily. Critical alerts: real-time.</div></div>
+      <hr class="row-divider">
+      <div class="row"><div class="row-label">Documentation completion</div><div class="row-value"><span class="tag tag-green">~95% target</span> vs <span class="tag tag-gray">~40% today</span></div></div>
+    </div>
+  </div>
+
+  <div id="dec-tools" class="tab-panel">
+    <div class="section-card">
+      <div class="section-title">✅ Ready to use / adapt</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Databricks Genie</div><div class="source-type">Statistical analysis · Lucca Cruz</div><span class="tag tag-green source-status">Ready</span></div>
+        <div class="source-card"><div class="source-name">Databricks Notebooks MCP</div><div class="source-type">Run statistical tests</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">atlassian-mcp</div><div class="source-type">Auto-sync to Jira + Confluence</div><span class="tag tag-green source-status">Connected</span></div>
+        <div class="source-card"><div class="source-name">nu-agent-factory</div><div class="source-type">Always-on agent runtime · Julien Malige</div><span class="tag tag-green source-status">RFC/PoC</span></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title">🔨 To build</div>
+      <div class="sources-grid">
+        <div class="source-card"><div class="source-name">Decision Framework Copilot</div><div class="source-type">Auto-run statistical tests + draft decision</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Auto-Doc Agent</div><div class="source-type">Experiment Result → Jira + Confluence</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Results Presentation Agent</div><div class="source-type">Audience-specific narratives</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Observability Agent</div><div class="source-type">Daily digest + real-time alerts + S23</div><span class="tag tag-red source-status">To build</span></div>
+        <div class="source-card"><div class="source-name">Experiment Result artifact schema</div><div class="source-type">Structured fields for auto-sync</div><span class="tag tag-red source-status">To define</span></div>
+      </div>
+    </div>
+    <div class="val-note" style="margin-top:4px;">
+      <div class="val-note-title">Why Decision & Observability must be its own module</div>
+      <div class="val-note-text">Only ~40% of experiments are documented today. The root cause is not discipline — it's that documentation requires manual multi-system entry (Jira + Confluence + wiki + stakeholder decks). The Auto-Doc Agent removes this entirely. Making Decision & Observability a distinct module with explicit ownership and an auto-doc agent is the structural fix — not a process reminder.</div>
+    </div>
+  </div>
+</div>
+  </div>
+</div>
+
+<script>
+/* ── SECTION NAV ── */
+function switchSection(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── ORBIT MAP VIEWS ── */
+function switchView(name, btn) {
+  document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── DETAIL PANELS ── */
+const _specIds = ['research','product','design','ba','engineering','decision'];
+
+function showDetail(id) {
+  document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.orbit-node').forEach(n => n.classList.remove('active-node'));
+  const panel = document.getElementById('detail-' + id);
+  if (!panel) return;
+  panel.classList.add('active');
+  if (!document.getElementById('view-orbit').classList.contains('active')) {
+    switchView('orbit', document.querySelectorAll('.view-btn')[0]);
+  }
+  if (_specIds.includes(id) && !panel.querySelector('.spec-cta')) {
+    const cta = document.createElement('div');
+    cta.className = 'spec-cta';
+    cta.innerHTML =
+      '<span class="spec-cta-hint">Knowledge · Skills · Orchestration · Tool Inventory</span>' +
+      '<button class="spec-link-btn" onclick="openFullSpec(\'' + id + '\')" >Open full spec →</button>';
+    panel.appendChild(cta);
+  }
+}
+
+function openFullSpec(modName) {
+  const btn = document.querySelectorAll('.nav-link')[2];
+  switchSection('specs', btn);
+  const modBtn = document.querySelector('[onclick*="switchMod(\'' + modName + '\'"]');
+  if (modBtn) switchMod(modName, modBtn);
+}
+
+/* ── MODULE SPECS ── */
+const modColors = {
+  research:'#820AD1', product:'#4F46E5', design:'#059669',
+  ba:'#0891B2', engineering:'#D97706', decision:'#DC2626'
+};
+
+document.querySelectorAll('.mod-btn').forEach(btn => {
+  const onclick = btn.getAttribute('onclick') || '';
+  const m = onclick.match(/switchMod\('(\w+)'/);
+  if (m && modColors[m[1]]) {
+    btn.dataset.mod = m[1];
+    btn.style.setProperty('--mod-color', modColors[m[1]]);
+  }
+});
+
+function switchMod(name, btn) {
+  document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+  document.querySelectorAll('.mod-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = 'white';
+    b.style.color = '';
+  });
+  document.getElementById('mod-' + name).classList.add('active');
+  btn.classList.add('active');
+  btn.style.background = modColors[name] || '#820AD1';
+  btn.style.color = 'white';
+}
+
+function switchTab(modPrefix, tabName, btn) {
+  const mod = document.getElementById('mod-' + modPrefix) ||
+    document.querySelector('.module.active');
+  mod.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  mod.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(modPrefix + '-' + tabName).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── INIT ── */
+document.getElementById('view-orbit').classList.add('active');
+</script>
+</body>
+</html>
